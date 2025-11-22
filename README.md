@@ -51,7 +51,7 @@ Follow these steps to set up the SDK and NDK:
     
     yes | sdkmanager --licenses
     # Install Platform, Build Tools, and NDK (Version 26 is required)
-    sdkmanager "platforms;android-33" "build-tools;33.0.2" "platform-tools" "ndk;26.1.10909125"
+    sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools" "ndk;26.1.10909125"
     ```
 
 ## Building
