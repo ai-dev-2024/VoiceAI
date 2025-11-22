@@ -136,112 +136,50 @@ public class LiveSubtitleService extends Service {
         cleanupNative();
     }
 
-    private View mSettingsPanel;
-    private float currentInterval = 2.0f; // Default
-
     private void setupOverlay() {
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         
-        LinearLayout rootLayout = new LinearLayout(this);
-        rootLayout.setOrientation(LinearLayout.VERTICAL);
-        rootLayout.setBackgroundColor(0xAA000000);
-        rootLayout.setPadding(20, 20, 20, 20);
+        // Root layout - FrameLayout to stack text and close button comfortably
+        android.widget.FrameLayout rootLayout = new android.widget.FrameLayout(this);
+        rootLayout.setBackgroundColor(0x88000000); // Semi-transparent background
+        rootLayout.setPadding(30, 20, 30, 20);
 
-        // Header with Buttons
-        LinearLayout header = new LinearLayout(this);
-        header.setOrientation(LinearLayout.HORIZONTAL);
-        header.setGravity(Gravity.END);
+        // Subtitle Text
+        mSubtitleText = new TextView(this);
+        mSubtitleText.setText("Waiting for audio...");
+        mSubtitleText.setTextColor(0xFFFFFFFF);
+        mSubtitleText.setTextSize(18);
+        mSubtitleText.setGravity(Gravity.CENTER_HORIZONTAL);
+        // Add margin to right to avoid overlap with close button if text is long
+        android.widget.FrameLayout.LayoutParams textParams = new android.widget.FrameLayout.LayoutParams(
+            android.widget.FrameLayout.LayoutParams.MATCH_PARENT, 
+            android.widget.FrameLayout.LayoutParams.WRAP_CONTENT
+        );
+        textParams.setMargins(0, 0, 60, 0); // Space for button
+        textParams.gravity = Gravity.CENTER_VERTICAL;
+        rootLayout.addView(mSubtitleText, textParams);
         
-        Button settingsBtn = new Button(this);
-        settingsBtn.setText("⚙");
-        settingsBtn.setTextSize(14);
-        settingsBtn.setPadding(20, 0, 20, 0);
-        settingsBtn.setBackgroundColor(0xFF555555);
-        settingsBtn.setTextColor(0xFFFFFFFF);
-        settingsBtn.setOnClickListener(v -> {
-            if (mSettingsPanel.getVisibility() == View.GONE) {
-                mSettingsPanel.setVisibility(View.VISIBLE);
-            } else {
-                mSettingsPanel.setVisibility(View.GONE);
-            }
-        });
+        // Close Button (Small 'X')
+        Button closeBtn = new Button(this);
+        closeBtn.setText("×");
+        closeBtn.setTextSize(24);
+        closeBtn.setTextColor(0xFFFF5555); // Light Red
+        closeBtn.setBackgroundColor(0x00000000); // Transparent
+        closeBtn.setPadding(0, 0, 0, 0);
+        closeBtn.setIncludeFontPadding(false);
         
-        Button stopBtn = new Button(this);
-        stopBtn.setText("Stop");
-        stopBtn.setTextSize(12);
-        stopBtn.setPadding(20, 0, 20, 0);
-        stopBtn.setBackgroundColor(0xFFFF0000);
-        stopBtn.setTextColor(0xFFFFFFFF);
-        stopBtn.setOnClickListener(v -> {
+        closeBtn.setOnClickListener(v -> {
             Intent stopIntent = new Intent(this, LiveSubtitleService.class);
             stopIntent.setAction(ACTION_STOP);
             startService(stopIntent);
         });
         
-        header.addView(settingsBtn);
-        // Add spacer
-        View spacer = new View(this);
-        spacer.setLayoutParams(new LinearLayout.LayoutParams(20, 1));
-        header.addView(spacer);
-        header.addView(stopBtn);
-        rootLayout.addView(header);
-
-        // Settings Panel (Hidden by default)
-        mSettingsPanel = new LinearLayout(this);
-        ((LinearLayout)mSettingsPanel).setOrientation(LinearLayout.VERTICAL);
-        mSettingsPanel.setBackgroundColor(0xDD333333);
-        mSettingsPanel.setPadding(10, 10, 10, 10);
-        mSettingsPanel.setVisibility(View.GONE);
-        
-        TextView latencyLabel = new TextView(this);
-        latencyLabel.setText("Update Interval: " + currentInterval + "s");
-        latencyLabel.setTextColor(0xFFFFFFFF);
-        ((LinearLayout)mSettingsPanel).addView(latencyLabel);
-        
-        android.widget.SeekBar latencyBar = new android.widget.SeekBar(this);
-        latencyBar.setMax(40); // 1.0 to 5.0 -> 0 to 40 (+10 / 10)
-        latencyBar.setProgress((int)((currentInterval - 1.0f) * 10));
-        latencyBar.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(android.widget.SeekBar seekBar, int progress, boolean fromUser) {
-                float val = 1.0f + (progress / 10.0f);
-                latencyLabel.setText("Update Interval: " + val + "s");
-                setUpdateInterval(val);
-                currentInterval = val;
-            }
-            @Override public void onStartTrackingTouch(android.widget.SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(android.widget.SeekBar seekBar) {}
-        });
-        ((LinearLayout)mSettingsPanel).addView(latencyBar);
-        
-        TextView sizeLabel = new TextView(this);
-        sizeLabel.setText("Text Size");
-        sizeLabel.setTextColor(0xFFFFFFFF);
-        ((LinearLayout)mSettingsPanel).addView(sizeLabel);
-        
-        android.widget.SeekBar sizeBar = new android.widget.SeekBar(this);
-        sizeBar.setMax(20); // 12 to 32
-        sizeBar.setProgress(6); // 18sp default
-        sizeBar.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(android.widget.SeekBar seekBar, int progress, boolean fromUser) {
-                if (mSubtitleText != null) {
-                    mSubtitleText.setTextSize(12 + progress);
-                }
-            }
-            @Override public void onStartTrackingTouch(android.widget.SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(android.widget.SeekBar seekBar) {}
-        });
-        ((LinearLayout)mSettingsPanel).addView(sizeBar);
-        
-        rootLayout.addView(mSettingsPanel);
-
-        mSubtitleText = new TextView(this);
-        mSubtitleText.setText("Waiting for audio...");
-        mSubtitleText.setTextColor(0xFFFFFFFF);
-        mSubtitleText.setTextSize(18);
-        mSubtitleText.setGravity(Gravity.CENTER);
-        rootLayout.addView(mSubtitleText);
+        android.widget.FrameLayout.LayoutParams btnParams = new android.widget.FrameLayout.LayoutParams(
+            80, 
+            80
+        );
+        btnParams.gravity = Gravity.END | Gravity.CENTER_VERTICAL;
+        rootLayout.addView(closeBtn, btnParams);
         
         mOverlayView = rootLayout;
 

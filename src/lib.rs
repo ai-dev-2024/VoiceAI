@@ -52,11 +52,21 @@ enum OnboardingStep {
     Ready,
 }
 
+struct SubtitleConfig {
+    update_interval_samples: usize,
+}
+
+static CONFIG: Mutex<SubtitleConfig> = Mutex::new(SubtitleConfig {
+    update_interval_samples: 32000, // Default 2.0s
+});
+
 struct TranscribeApp {
     step: OnboardingStep,
     status_msg: String,
     update_receiver: crossbeam_channel::Receiver<UiUpdate>,
     update_sender: crossbeam_channel::Sender<UiUpdate>,
+    // UI state for slider
+    update_interval_sec: f32,
 }
 
 enum UiUpdate {
@@ -74,6 +84,7 @@ impl TranscribeApp {
             status_msg: "Initializing...".to_string(),
             update_receiver: receiver,
             update_sender: sender.clone(),
+            update_interval_sec: 2.0,
         };
         
         // Initial check
@@ -176,7 +187,6 @@ impl eframe::App for TranscribeApp {
                         }
                     }
                     OnboardingStep::ImeSetup => {
-                        // Deprecated step, but kept for enum compatibility
                         ui.label("Permissions Granted!");
                     }
                     OnboardingStep::AssetExtraction => {
@@ -195,6 +205,27 @@ impl eframe::App for TranscribeApp {
                             }
                         }
                         
+                        ui.add_space(20.0);
+                        ui.separator();
+                        
+                        ui.heading("Live Subtitle Settings");
+                        ui.add_space(5.0);
+                        
+                        ui.label("Update Interval (Latency vs Accuracy):");
+                        if ui.add(egui::Slider::new(&mut self.update_interval_sec, 1.0..=5.0).text("seconds")).changed() {
+                            let samples = (self.update_interval_sec * 16000.0) as usize;
+                            if let Ok(mut cfg) = CONFIG.lock() {
+                                cfg.update_interval_samples = samples;
+                            }
+                            // Also update running state if active
+                            if let Ok(mut guard) = LIVE_STATE.lock() {
+                                if let Some(state) = guard.as_mut() {
+                                    state.update_interval = samples;
+                                }
+                            }
+                        }
+                        ui.label(egui::RichText::new("⚠ Warning: Lower interval reduces latency but may decrease accuracy and increase battery usage.").size(10.0).color(egui::Color32::YELLOW));
+
                         ui.add_space(20.0);
                         ui.separator();
                         ui.heading("Keyboard Setup (Optional)");
@@ -685,12 +716,17 @@ pub unsafe extern "system" fn Java_dev_notune_transcribe_LiveSubtitleService_ini
     let (tx, rx) = crossbeam_channel::unbounded();
 
     let mut state_guard = LIVE_STATE.lock().unwrap();
+    let initial_interval = if let Ok(cfg) = CONFIG.lock() {
+        cfg.update_interval_samples
+    } else {
+        32000
+    };
     *state_guard = Some(LiveSubtitleState {
         buffer: Arc::new(Mutex::new(Vec::new())),
         worker_tx: tx,
         total_samples: 0,
         last_process_sample: 0,
-        update_interval: 32000, // Default 2.0s
+        update_interval: initial_interval,
     });
     drop(state_guard);
 
