@@ -210,6 +210,16 @@ impl eframe::App for TranscribeApp {
                         
                         ui.add_space(20.0);
                         ui.separator();
+                        
+                        if ui.button("Start Live Subtitles").clicked() {
+                            #[cfg(target_os = "android")]
+                            if let Err(e) = start_live_subtitles() {
+                                self.status_msg = format!("Failed to start: {}", e);
+                            }
+                        }
+                        
+                        ui.add_space(20.0);
+                        ui.separator();
                         ui.label("Status:");
                         ui.label(&self.status_msg);
                     }
@@ -222,6 +232,43 @@ impl eframe::App for TranscribeApp {
 // ===========================================================================
 // JNI Utilities & Service
 // ===========================================================================
+
+#[cfg(target_os = "android")]
+fn start_live_subtitles() -> anyhow::Result<()> {
+    let ctx = ndk_context::android_context();
+    let vm = unsafe { jni::JavaVM::from_raw(ctx.vm().cast()) }?;
+    let mut env = vm.attach_current_thread()?;
+    let activity = unsafe { JObject::from_raw(ctx.context().cast()) };
+    
+    let intent_class = env.find_class("android/content/Intent")?;
+    let intent_obj = env.new_object(&intent_class, "()V", &[])?;
+    let pkg_name = env.new_string("dev.notune.transcribe")?;
+    let cls_name = env.new_string("dev.notune.transcribe.LiveSubtitleActivity")?;
+    
+    env.call_method(
+        &intent_obj,
+        "setClassName",
+        "(Ljava/lang/String;Ljava/lang/String;)Landroid/content/Intent;",
+        &[(&pkg_name).into(), (&cls_name).into()]
+    )?;
+    
+    // FLAG_ACTIVITY_NEW_TASK
+    env.call_method(
+        &intent_obj, 
+        "addFlags", 
+        "(I)Landroid/content/Intent;", 
+        &[268435456.into()]
+    )?;
+
+    env.call_method(
+        &activity,
+        "startActivity",
+        "(Landroid/content/Intent;)V",
+        &[(&intent_obj).into()]
+    )?;
+    
+    Ok(())
+}
 
 #[cfg(target_os = "android")]
 fn check_permission(perm_name: &str) -> anyhow::Result<bool> {
@@ -414,7 +461,7 @@ fn copy_asset_file(
 }
 
 // ===========================================================================
-// IME Implementation
+// IME & Live Subtitle Implementation
 // ===========================================================================
 
 #[cfg(target_os = "android")]
@@ -426,15 +473,82 @@ unsafe impl Sync for SendStream {}
 
 #[cfg(target_os = "android")]
 struct ImeState {
-    engine: Option<Arc<Mutex<ParakeetEngine>>>,
     stream: Option<SendStream>,
     audio_buffer: Arc<Mutex<Vec<f32>>>,
     jvm: Arc<jni::JavaVM>,
     service_ref: jni::objects::GlobalRef,
 }
 
+// --- Live Subtitles JNI ---
+
 #[cfg(target_os = "android")]
-static IME_STATE: std::sync::Mutex<Option<ImeState>> = std::sync::Mutex::new(None);
+struct LiveSubtitleState {
+    buffer: Arc<Mutex<Vec<f32>>>,
+    worker_tx: crossbeam_channel::Sender<Vec<f32>>,
+}
+
+#[cfg(target_os = "android")]
+static IME_STATE: Mutex<Option<ImeState>> = Mutex::new(None);
+#[cfg(target_os = "android")]
+static LIVE_STATE: Mutex<Option<LiveSubtitleState>> = Mutex::new(None);
+#[cfg(target_os = "android")]
+static GLOBAL_ENGINE: Mutex<Option<Arc<Mutex<ParakeetEngine>>>> = Mutex::new(None);
+
+#[cfg(target_os = "android")]
+fn ensure_engine_loaded(
+    vm: &Arc<jni::JavaVM>,
+    service_ref: &jni::objects::GlobalRef,
+    callback_method: &str
+) {
+    // Check if already loaded
+    if GLOBAL_ENGINE.lock().unwrap().is_some() {
+        if let Ok(mut env) = vm.attach_current_thread() {
+            let msg = env.new_string("Ready").unwrap();
+            let _ = env.call_method(service_ref.as_obj(), callback_method, "(Ljava/lang/String;)V", &[(&msg).into()]);
+        }
+        return;
+    }
+
+    // Not loaded, spawn loader
+    let vm_clone = vm.clone();
+    let service_ref_clone = service_ref.clone();
+    let cb_name = callback_method.to_string();
+    
+    std::thread::spawn(move || {
+        let mut env = vm_clone.attach_current_thread().unwrap();
+        let service_obj = service_ref_clone.as_obj();
+        
+        // Notify loading
+        let msg = env.new_string("Initializing model...").unwrap();
+        let _ = env.call_method(service_obj, &cb_name, "(Ljava/lang/String;)V", &[(&msg).into()]);
+
+        match extract_assets(&mut env, service_obj) {
+            Ok(path) => {
+                 let msg = env.new_string("Loading model...").unwrap();
+                 let _ = env.call_method(service_obj, &cb_name, "(Ljava/lang/String;)V", &[(&msg).into()]);
+                 
+                 let mut engine = ParakeetEngine::new();
+                 match engine.load_model_with_params(&path, ParakeetModelParams::int8()) {
+                     Ok(_) => {
+                         *GLOBAL_ENGINE.lock().unwrap() = Some(Arc::new(Mutex::new(engine)));
+                         let msg = env.new_string("Ready").unwrap();
+                         let _ = env.call_method(service_obj, &cb_name, "(Ljava/lang/String;)V", &[(&msg).into()]);
+                     },
+                     Err(e) => {
+                         let msg = env.new_string(format!("Error: {}", e)).unwrap();
+                         let _ = env.call_method(service_obj, &cb_name, "(Ljava/lang/String;)V", &[(&msg).into()]);
+                     }
+                 }
+            },
+            Err(e) => {
+                let msg = env.new_string(format!("Error: {}", e)).unwrap();
+                let _ = env.call_method(service_obj, &cb_name, "(Ljava/lang/String;)V", &[(&msg).into()]);
+            }
+        }
+    });
+}
+
+// --- IME JNI ---
 
 #[cfg(target_os = "android")]
 #[no_mangle]
@@ -444,80 +558,21 @@ pub unsafe extern "system" fn Java_dev_notune_transcribe_RustInputMethodService_
     service: JObject,
 ) {
     android_logger::init_once(android_logger::Config::default().with_max_level(log::LevelFilter::Info));
-    log::info!("IME: initNative called (PID: {})", std::process::id());
-
     let vm = env.get_java_vm().expect("Failed to get JavaVM");
+    let vm_arc = Arc::new(vm);
     let service_ref = env.new_global_ref(&service).expect("Failed to ref service");
     
-    let already_loaded = {
-        let mut state_guard = IME_STATE.lock().unwrap();
-        if let Some(state) = state_guard.as_mut() {
-            // Update the service reference to the new instance
-            state.service_ref = service_ref.clone();
-            state.jvm = Arc::new(vm); // Update JVM
-            
-            // If engine is loaded, we are ready
-            state.engine.is_some()
-        } else {
-            // First time init
-            *state_guard = Some(ImeState {
-                engine: None,
-                stream: None,
-                audio_buffer: Arc::new(Mutex::new(Vec::new())),
-                jvm: Arc::new(vm),
-                service_ref: service_ref.clone(),
-            });
-            false
-        }
-    };
-    
-    if already_loaded {
-        send_ime_status(&mut env, &service, "Ready");
-        return;
-    }
-    
-    // Start init thread
-    std::thread::spawn(move || {
-        // Attach
-        let vm = {
-             let state = IME_STATE.lock().unwrap();
-             if let Some(s) = state.as_ref() { s.jvm.clone() } else { return; }
-        };
-        let mut env = vm.attach_current_thread().unwrap();
-        let service_obj = service_ref.as_obj();
-        
-        send_ime_status(&mut env, &service_obj, "Initializing model...");
-        
-        match extract_assets(&mut env, service_obj) {
-            Ok(path) => {
-                 send_ime_status(&mut env, &service_obj, "Loading model...");
-                 let mut engine = ParakeetEngine::new();
-                 match engine.load_model_with_params(&path, ParakeetModelParams::int8()) {
-                     Ok(_) => {
-                         {
-                             let mut state = IME_STATE.lock().unwrap();
-                             if let Some(s) = state.as_mut() {
-                                 s.engine = Some(Arc::new(Mutex::new(engine)));
-                             }
-                         }
-                         send_ime_status(&mut env, &service_obj, "Ready"); // Just "Ready" to match Java check
-                     },
-                     Err(e) => {
-                         send_ime_status(&mut env, &service_obj, &format!("Error loading model: {}", e));
-                     }
-                 }
-            },
-            Err(e) => {
-                send_ime_status(&mut env, &service_obj, &format!("Error extracting assets: {}", e));
-            }
-        }
+    let mut state_guard = IME_STATE.lock().unwrap();
+    *state_guard = Some(ImeState {
+        stream: None,
+        audio_buffer: Arc::new(Mutex::new(Vec::new())),
+        jvm: vm_arc.clone(),
+        service_ref: service_ref.clone(),
     });
-}
-
-#[cfg(target_os = "android")]
-fn send_ime_status(env: &mut JNIEnv, service: &JObject, msg: &str) {
-    let msg_j = env.new_string(msg).unwrap();
-    let _ = env.call_method(service, "onStatusUpdate", "(Ljava/lang/String;)V", &[(&msg_j).into()]);
+    
+    drop(state_guard);
+    
+    ensure_engine_loaded(&vm_arc, &service_ref, "onStatusUpdate");
 }
 
 #[cfg(target_os = "android")]
@@ -526,9 +581,7 @@ pub unsafe extern "system" fn Java_dev_notune_transcribe_RustInputMethodService_
     _env: JNIEnv,
     _class: JClass,
 ) {
-    log::info!("IME: cleanupNative called");
-    let mut state = IME_STATE.lock().unwrap();
-    *state = None;
+    *IME_STATE.lock().unwrap() = None;
 }
 
 #[cfg(target_os = "android")]
@@ -537,16 +590,12 @@ pub unsafe extern "system" fn Java_dev_notune_transcribe_RustInputMethodService_
     mut env: JNIEnv,
     _class: JClass,
 ) {
-    log::info!("IME Start Recording");
     let mut state_guard = IME_STATE.lock().unwrap();
     if let Some(state) = state_guard.as_mut() {
          let host = cpal::default_host();
          let device = match host.default_input_device() {
              Some(d) => d,
-             None => {
-                 send_ime_status(&mut env, state.service_ref.as_obj(), "No mic found");
-                 return;
-             }
+             None => return,
          };
          
          let config = cpal::StreamConfig {
@@ -558,29 +607,21 @@ pub unsafe extern "system" fn Java_dev_notune_transcribe_RustInputMethodService_
          state.audio_buffer.lock().unwrap().clear();
          let buffer_clone = state.audio_buffer.clone();
          
-         let err_fn = |err| log::error!("Stream error: {}", err);
-         
          let stream = device.build_input_stream(
              &config,
              move |data: &[f32], _: &_| {
                  buffer_clone.lock().unwrap().extend_from_slice(data);
              },
-             err_fn,
+             |e| log::error!("Stream err: {}", e),
              None,
          );
          
-         match stream {
-             Ok(s) => {
-                 if let Err(e) = s.play() {
-                     send_ime_status(&mut env, state.service_ref.as_obj(), &format!("Stream error: {}", e));
-                 } else {
-                     state.stream = Some(SendStream(s));
-                     send_ime_status(&mut env, state.service_ref.as_obj(), "Listening...");
-                 }
-             },
-             Err(e) => {
-                 send_ime_status(&mut env, state.service_ref.as_obj(), &format!("Mic init error: {}", e));
-             }
+         if let Ok(s) = stream {
+             s.play().ok();
+             state.stream = Some(SendStream(s));
+             
+             let msg = env.new_string("Listening...").unwrap();
+             let _ = env.call_method(state.service_ref.as_obj(), "onStatusUpdate", "(Ljava/lang/String;)V", &[(&msg).into()]);
          }
     }
 }
@@ -591,49 +632,152 @@ pub unsafe extern "system" fn Java_dev_notune_transcribe_RustInputMethodService_
     mut env: JNIEnv,
     _class: JClass,
 ) {
-    log::info!("IME Stop Recording");
-    let (buffer, engine_arc_opt, jvm, service_ref) = {
+    let (buffer, jvm, service_ref) = {
         let mut state_guard = IME_STATE.lock().unwrap();
         if let Some(state) = state_guard.as_mut() {
-            state.stream = None; // Drop stream stops recording
-            
-            let buf = state.audio_buffer.lock().unwrap().clone();
-            let eng = state.engine.clone(); // Clone the Arc
-            
-            (buf, eng, state.jvm.clone(), state.service_ref.clone())
+            state.stream = None;
+            (state.audio_buffer.lock().unwrap().clone(), state.jvm.clone(), state.service_ref.clone())
         } else {
             return;
         }
     };
     
-    if engine_arc_opt.is_none() {
-         send_ime_status(&mut env, service_ref.as_obj(), "Engine not ready");
-         return;
-    }
-    let engine_arc = engine_arc_opt.unwrap();
-    
-    send_ime_status(&mut env, service_ref.as_obj(), "Transcribing...");
+    let engine_arc = {
+        let guard = GLOBAL_ENGINE.lock().unwrap();
+        if guard.is_none() { return; }
+        guard.as_ref().unwrap().clone()
+    };
+
+    let msg = env.new_string("Transcribing...").unwrap();
+    let _ = env.call_method(service_ref.as_obj(), "onStatusUpdate", "(Ljava/lang/String;)V", &[(&msg).into()]);
     
     std::thread::spawn(move || {
         let mut env = jvm.attach_current_thread().unwrap();
         let service_obj = service_ref.as_obj();
         
-        let transcription_result = {
-            // Lock ONLY the engine, not the global state
-            let mut engine = engine_arc.lock().unwrap();
-            engine.transcribe_samples(buffer, None)
-                .map_err(|e| anyhow::anyhow!(e.to_string()))
+        let res = {
+             let mut eng = engine_arc.lock().unwrap();
+             eng.transcribe_samples(buffer, None)
         };
         
-        match transcription_result {
-            Ok(res) => {
-                send_ime_status(&mut env, &service_obj, "Ready");
-                let text_j = env.new_string(res.text).unwrap();
-                let _ = env.call_method(service_obj, "onTextTranscribed", "(Ljava/lang/String;)V", &[(&text_j).into()]);
+        match res {
+            Ok(r) => {
+                let msg = env.new_string("Ready").unwrap();
+                let _ = env.call_method(service_obj, "onStatusUpdate", "(Ljava/lang/String;)V", &[(&msg).into()]);
+                let txt = env.new_string(r.text).unwrap();
+                let _ = env.call_method(service_obj, "onTextTranscribed", "(Ljava/lang/String;)V", &[(&txt).into()]);
             },
             Err(e) => {
-                send_ime_status(&mut env, &service_obj, &format!("Error: {}", e));
+                let msg = env.new_string(format!("Error: {}", e)).unwrap();
+                let _ = env.call_method(service_obj, "onStatusUpdate", "(Ljava/lang/String;)V", &[(&msg).into()]);
             }
         }
     });
+}
+
+#[cfg(target_os = "android")]
+#[no_mangle]
+pub unsafe extern "system" fn Java_dev_notune_transcribe_LiveSubtitleService_initNative(
+    mut env: JNIEnv,
+    _class: JClass,
+    service: JObject,
+) {
+    android_logger::init_once(android_logger::Config::default().with_max_level(log::LevelFilter::Info));
+    let vm = env.get_java_vm().expect("Failed to get JavaVM");
+    let vm_arc = Arc::new(vm);
+    let service_ref = env.new_global_ref(&service).expect("Failed to ref service");
+
+    let (tx, rx) = crossbeam_channel::unbounded();
+
+    let mut state_guard = LIVE_STATE.lock().unwrap();
+    *state_guard = Some(LiveSubtitleState {
+        buffer: Arc::new(Mutex::new(Vec::new())),
+        worker_tx: tx,
+    });
+    drop(state_guard);
+
+    // Ensure engine loaded first
+    ensure_engine_loaded(&vm_arc, &service_ref, "onSubtitleText");
+
+    // Spawn Worker Thread
+    let vm_worker = vm_arc.clone();
+    let service_ref_worker = service_ref.clone();
+    
+    std::thread::spawn(move || {
+        let mut env = match vm_worker.attach_current_thread() {
+            Ok(e) => e,
+            Err(e) => {
+                log::error!("Worker failed to attach: {}", e);
+                return;
+            }
+        };
+        let service_obj = service_ref_worker.as_obj();
+        
+        while let Ok(samples) = rx.recv() {
+            let engine_arc_opt = GLOBAL_ENGINE.lock().unwrap().clone();
+            if let Some(engine_arc) = engine_arc_opt {
+                let res = {
+                    let mut eng = engine_arc.lock().unwrap();
+                    eng.transcribe_samples(samples, None)
+                };
+                
+                if let Ok(r) = res {
+                     let text_trim = r.text.trim();
+                     if !text_trim.is_empty() {
+                        if let Ok(txt) = env.new_string(text_trim) {
+                            let _ = env.call_method(service_obj, "onSubtitleText", "(Ljava/lang/String;)V", &[(&txt).into()]);
+                        }
+                     }
+                }
+            }
+        }
+    });
+}
+
+#[cfg(target_os = "android")]
+#[no_mangle]
+pub unsafe extern "system" fn Java_dev_notune_transcribe_LiveSubtitleService_cleanupNative(
+    _env: JNIEnv,
+    _class: JClass,
+) {
+    *LIVE_STATE.lock().unwrap() = None;
+}
+
+#[cfg(target_os = "android")]
+#[no_mangle]
+pub unsafe extern "system" fn Java_dev_notune_transcribe_LiveSubtitleService_pushAudio(
+    env: JNIEnv,
+    _class: JClass,
+    data: jni::objects::JFloatArray,
+    length: jni::sys::jint,
+) {
+    let (buffer_arc, tx) = {
+        let guard = LIVE_STATE.lock().unwrap();
+        if let Some(state) = guard.as_ref() {
+            (state.buffer.clone(), state.worker_tx.clone())
+        } else {
+            return;
+        }
+    };
+
+    let mut buffer = buffer_arc.lock().unwrap();
+    let mut input = vec![0.0f32; length as usize];
+    env.get_float_array_region(&data, 0, &mut input).unwrap();
+    buffer.extend_from_slice(&input);
+
+    // Threshold: 2.5 seconds (40000 samples)
+    // We send the whole buffer, then keep the last 0.5s (8000 samples) for context (overlap).
+    if buffer.len() >= 40000 {
+        let samples_to_transcribe = buffer.clone();
+        let _ = tx.send(samples_to_transcribe);
+        
+        // Overlap: Keep last 0.5s (8000 samples)
+        if buffer.len() > 8000 {
+             let new_start = buffer.len() - 8000;
+             let new_buf = buffer[new_start..].to_vec();
+             *buffer = new_buf;
+        } else {
+            buffer.clear();
+        }
+    }
 }
