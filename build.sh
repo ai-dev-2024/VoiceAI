@@ -55,10 +55,25 @@ APKSIGNER="$BUILD_TOOLS/apksigner"
 ZIPALIGN="$BUILD_TOOLS/zipalign"
 
 # Keystore
-KEYSTORE="${ANDROID_KEYSTORE:-$HOME/.android/debug.keystore}"
-KEYSTORE_PASS="${ANDROID_KEYSTORE_PASS:-pass:android}"
-KEY_ALIAS="${ANDROID_KEY_ALIAS:-androiddebugkey}"
-KEY_PASS="${ANDROID_KEY_PASS:-pass:android}"
+if [ -n "$RELEASE_KEYSTORE" ] && [ -f "$RELEASE_KEYSTORE" ]; then
+    KEYSTORE="$RELEASE_KEYSTORE"
+    KEYSTORE_PASS="${RELEASE_KEYSTORE_PASS:-pass:android}"
+    KEY_ALIAS="${RELEASE_KEY_ALIAS:-androidreleasekey}"
+    KEY_PASS="${RELEASE_KEY_PASS:-pass:android}"
+    echo "Using Release Keystore: $KEYSTORE"
+elif [ -f "release.keystore" ]; then
+    KEYSTORE="release.keystore"
+    KEYSTORE_PASS="${RELEASE_KEYSTORE_PASS:-pass:android}"
+    KEY_ALIAS="${RELEASE_KEY_ALIAS:-androidreleasekey}"
+    KEY_PASS="${RELEASE_KEY_PASS:-pass:android}"
+    echo "Using Local Release Keystore: $KEYSTORE"
+else
+    KEYSTORE="${ANDROID_KEYSTORE:-$HOME/.android/debug.keystore}"
+    KEYSTORE_PASS="${ANDROID_KEYSTORE_PASS:-pass:android}"
+    KEY_ALIAS="${ANDROID_KEY_ALIAS:-androiddebugkey}"
+    KEY_PASS="${ANDROID_KEY_PASS:-pass:android}"
+    echo "Using Debug Keystore: $KEYSTORE"
+fi
 
 # Ensure debug keystore exists if using default
 if [ "$KEYSTORE" = "$HOME/.android/debug.keystore" ] && [ ! -f "$KEYSTORE" ]; then
@@ -208,7 +223,7 @@ $APKSIGNER sign --ks "$KEYSTORE" \
     --ks-pass "$KEYSTORE_PASS" \
     --key-pass "$KEY_PASS" \
     --ks-key-alias "$KEY_ALIAS" \
-    --out android_transcribe_app_manual.apk \
+    --out android_transcribe_app_release.apk \
     build_manual/apk/aligned.apk
 
-echo "SUCCESS: android_transcribe_app_manual.apk created"
+echo "SUCCESS: android_transcribe_app_release.apk created"
