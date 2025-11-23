@@ -29,6 +29,7 @@ public class RustInputMethodService extends InputMethodService {
     private ProgressBar progressBar;
     private Handler mainHandler;
     private boolean isRecording = false;
+    private String lastStatus = "Initializing...";
 
     @Override
     public void onCreate() {
@@ -102,6 +103,8 @@ public class RustInputMethodService extends InputMethodService {
             ));
             layout.addView(spacer);
             
+            updateUiState();
+
             return layout;
         } catch (Exception e) {
             Log.e(TAG, "Error in onCreateInputView", e);
@@ -140,23 +143,27 @@ public class RustInputMethodService extends InputMethodService {
     public void onStatusUpdate(String status) {
         mainHandler.post(() -> {
             Log.d(TAG, "Status: " + status);
-            if (statusView != null) statusView.setText(status);
-            
-            // Logic to unlock UI when ready
-            if (status.contains("Ready") || status.contains("Listening")) {
-                if (progressBar != null) progressBar.setVisibility(View.GONE);
-                if (recordButton != null) {
-                    recordButton.setEnabled(true);
-                    recordButton.setAlpha(1.0f);
-                }
-            } else if (status.contains("Initializing") || status.contains("Loading")) {
-                if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
-                if (recordButton != null) {
-                    recordButton.setEnabled(false);
-                    recordButton.setAlpha(0.5f);
-                }
-            }
+            lastStatus = status;
+            updateUiState();
         });
+    }
+
+    private void updateUiState() {
+        if (statusView != null) statusView.setText(lastStatus);
+
+        if (lastStatus.contains("Ready") || lastStatus.contains("Listening")) {
+            if (progressBar != null) progressBar.setVisibility(View.GONE);
+            if (recordButton != null) {
+                recordButton.setEnabled(true);
+                recordButton.setAlpha(1.0f);
+            }
+        } else if (lastStatus.contains("Initializing") || lastStatus.contains("Loading")) {
+            if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
+            if (recordButton != null) {
+                recordButton.setEnabled(false);
+                recordButton.setAlpha(0.5f);
+            }
+        }
     }
     
     // Called from Rust
