@@ -1,10 +1,13 @@
 # Offline Voice Input (Android)
 
-An offline, privacy-focused voice input keyboard for Android, built with Rust.
+[![Download APK](https://img.shields.io/badge/Download-Latest%20APK-blue?style=for-the-badge&logo=android)](https://github.com/notune/android_transcribe_app/releases/latest)
+
+An offline, privacy-focused voice input keyboard and live subtitle tool for Android, built with Rust.
 
 ## Features
 
 - **Offline Transcription:** Uses deep learning models (Parakeet TDT) to transcribe speech entirely on-device.
+- **Live Subtitles:** Get real-time captions for any audio or video playing on your device (e.g., YouTube, Podcasts, Zoom).
 - **Privacy-First:** No audio data leaves your device.
 - **Rust Backend:** Efficient and safe native code using [transcribe-rs](https://github.com/cjpais/transcribe-rs) (included).
 - **Modern UI:** Built with `egui` and `eframe`.
@@ -61,11 +64,11 @@ Follow these steps to set up the SDK and NDK:
 
 ## Building
 
-### Debug APK (Manual)
-For quick testing, you can build a standard APK:
+### APK
+You can build an APK with:
 ```bash
-./build.sh
-# Output: android_transcribe_app_manual.apk
+ANDROID_HOME=$(pwd)/android-sdk/ ./build.sh
+# Output: android_transcribe_app_release.apk
 ```
 
 ### Release AAB (Google Play Ready)
