@@ -61,11 +61,11 @@ Follow these steps to set up the SDK and NDK:
 
 ## Building
 
-### Debug APK (Manual)
-For quick testing, you can build a standard APK:
+### APK
+You can build an APK with:
 ```bash
-./build.sh
-# Output: android_transcribe_app_manual.apk
+ANDROID_HOME=$(pwd)/android-sdk/ ./build.sh
+# Output: android_transcribe_app_release.apk
 ```
 
 ### Release AAB (Google Play Ready)

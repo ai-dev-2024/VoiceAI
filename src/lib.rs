@@ -67,6 +67,7 @@ struct TranscribeApp {
     update_sender: crossbeam_channel::Sender<UiUpdate>,
     // UI state for slider
     update_interval_sec: f32,
+    show_settings: bool,
 }
 
 enum UiUpdate {
@@ -85,6 +86,7 @@ impl TranscribeApp {
             update_receiver: receiver,
             update_sender: sender.clone(),
             update_interval_sec: 2.0,
+            show_settings: false,
         };
         
         // Initial check
@@ -169,16 +171,44 @@ impl eframe::App for TranscribeApp {
         }
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            if self.show_settings {
+                ui.vertical_centered(|ui| {
+                    ui.add_space(40.0);
+                    if ui.button(egui::RichText::new("⬅ Back").size(20.0)).clicked() {
+                        self.show_settings = false;
+                    }
+                    ui.add_space(20.0);
+                    ui.heading(egui::RichText::new("Settings").size(30.0));
+                    ui.add_space(20.0);
+                    
+                    ui.label(egui::RichText::new("Update Interval (Latency vs Accuracy):").size(18.0));
+                    if ui.add(egui::Slider::new(&mut self.update_interval_sec, 1.0..=5.0).text("seconds")).changed() {
+                        let samples = (self.update_interval_sec * 16000.0) as usize;
+                        if let Ok(mut cfg) = CONFIG.lock() {
+                            cfg.update_interval_samples = samples;
+                        }
+                        // Also update running state if active
+                        if let Ok(mut guard) = LIVE_STATE.lock() {
+                            if let Some(state) = guard.as_mut() {
+                                state.update_interval = samples;
+                            }
+                        }
+                    }
+                    ui.label(egui::RichText::new("⚠ Warning: Lower interval reduces latency but may decrease accuracy and increase battery usage.").size(14.0).color(egui::Color32::YELLOW));
+                });
+                return;
+            }
+
             ui.vertical_centered(|ui| {
                 ui.add_space(60.0);
-                ui.heading("Offline Voice Input");
-                ui.add_space(10.0);
+                ui.heading(egui::RichText::new("Offline Voice Input").size(32.0));
+                ui.add_space(20.0);
                 
                 match self.step {
                     OnboardingStep::Permissions => {
-                        ui.label("Welcome! To use this app, we need permission to record audio.");
+                        ui.label(egui::RichText::new("Welcome! To use this app, we need permission to record audio.").size(18.0));
                         ui.add_space(20.0);
-                        if ui.button("Grant Microphone Permission").clicked() {
+                        if ui.add(egui::Button::new(egui::RichText::new("Grant Microphone Permission").size(20.0)).min_size(egui::vec2(200.0, 60.0))).clicked() {
                             self.request_permissions();
                         }
                         ui.add_space(10.0);
@@ -195,52 +225,43 @@ impl eframe::App for TranscribeApp {
                         ui.label(&self.status_msg);
                     }
                     OnboardingStep::Ready => {
-                        ui.label("Setup Complete.");
                         ui.add_space(10.0);
                         
-                        if ui.button("Start Live Subtitles").clicked() {
+                        // 1. Keyboard Setup
+                        ui.label(egui::RichText::new("1. Keyboard Setup").size(24.0).strong());
+                        ui.label(egui::RichText::new("Setup the keyboard to input any text via voice on any text field.").size(16.0));
+                        ui.add_space(10.0);
+                        
+                        #[cfg(target_os = "android")]
+                        if ui.add(egui::Button::new(egui::RichText::new("Open Keyboard Settings").size(20.0)).min_size(egui::vec2(250.0, 50.0))).clicked() {
+                            let _ = open_ime_settings();
+                        }
+
+                        ui.add_space(30.0);
+                        ui.separator();
+                        ui.add_space(30.0);
+
+                        // 2. Live Translate
+                        ui.label(egui::RichText::new("2. Live Translate").size(24.0).strong());
+                        ui.label(egui::RichText::new("Get live subtitles for any video/audio on the phone.").size(16.0));
+                        ui.label(egui::RichText::new("After starting, select 'Share entire screen' for best results.").size(16.0));
+                        
+                        ui.add_space(20.0);
+                        
+                        if ui.add(egui::Button::new(egui::RichText::new("Start Live Subtitles").size(28.0)).min_size(egui::vec2(280.0, 80.0))).clicked() {
                             #[cfg(target_os = "android")]
                             if let Err(e) = start_live_subtitles() {
                                 self.status_msg = format!("Failed to start: {}", e);
                             }
                         }
                         
-                        ui.add_space(20.0);
-                        ui.separator();
-                        
-                        ui.heading("Live Subtitle Settings");
-                        ui.add_space(5.0);
-                        
-                        ui.label("Update Interval (Latency vs Accuracy):");
-                        if ui.add(egui::Slider::new(&mut self.update_interval_sec, 1.0..=5.0).text("seconds")).changed() {
-                            let samples = (self.update_interval_sec * 16000.0) as usize;
-                            if let Ok(mut cfg) = CONFIG.lock() {
-                                cfg.update_interval_samples = samples;
-                            }
-                            // Also update running state if active
-                            if let Ok(mut guard) = LIVE_STATE.lock() {
-                                if let Some(state) = guard.as_mut() {
-                                    state.update_interval = samples;
-                                }
-                            }
-                        }
-                        ui.label(egui::RichText::new("⚠ Warning: Lower interval reduces latency but may decrease accuracy and increase battery usage.").size(10.0).color(egui::Color32::YELLOW));
-
-                        ui.add_space(20.0);
-                        ui.separator();
-                        ui.heading("Keyboard Setup (Optional)");
-                        ui.label("To use Voice Input in other apps:");
-                        ui.label("1. Enable 'Offline Voice Input' in Settings.");
-                        ui.label("2. Switch keyboard when typing.");
-                        
-                        #[cfg(target_os = "android")]
-                        if ui.button("Open Keyboard Settings").clicked() {
-                            let _ = open_ime_settings();
+                        ui.add_space(40.0);
+                        if ui.button(egui::RichText::new("⚙ Settings").size(16.0)).clicked() {
+                            self.show_settings = true;
                         }
 
-                        ui.add_space(10.0);
-                        ui.label("Status:");
-                        ui.label(&self.status_msg);
+                        ui.add_space(20.0);
+                        ui.label(format!("Status: {}", self.status_msg));
                     }
                 }
             });
