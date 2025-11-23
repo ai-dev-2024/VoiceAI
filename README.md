@@ -7,6 +7,7 @@ An offline, privacy-focused voice input keyboard and live subtitle tool for Andr
 ## Features
 
 - **Offline Transcription:** Uses deep learning models (Parakeet TDT) to transcribe speech entirely on-device.
+- **Voice Input Keyboard** Use your voice as a text field input method.
 - **Live Subtitles:** Get real-time captions for any audio or video playing on your device (e.g., YouTube, Podcasts, Zoom).
 - **Privacy-First:** No audio data leaves your device.
 - **Rust Backend:** Efficient and safe native code using [transcribe-rs](https://github.com/cjpais/transcribe-rs) (included).
