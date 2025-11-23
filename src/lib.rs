@@ -228,7 +228,7 @@ impl eframe::App for TranscribeApp {
                         ui.add_space(10.0);
                         
                         // 1. Keyboard Setup
-                        ui.label(egui::RichText::new("1. Keyboard Setup").size(24.0).strong());
+                        ui.label(egui::RichText::new("Keyboard Setup").size(24.0).strong());
                         ui.label(egui::RichText::new("Setup the keyboard to input any text via voice on any text field.").size(16.0));
                         ui.add_space(10.0);
                         
@@ -242,13 +242,13 @@ impl eframe::App for TranscribeApp {
                         ui.add_space(30.0);
 
                         // 2. Live Translate
-                        ui.label(egui::RichText::new("2. Live Translate").size(24.0).strong());
+                        ui.label(egui::RichText::new("Live Translate").size(24.0).strong());
                         ui.label(egui::RichText::new("Get live subtitles for any video/audio on the phone.").size(16.0));
                         ui.label(egui::RichText::new("After starting, select 'Share entire screen' for best results.").size(16.0));
                         
                         ui.add_space(20.0);
                         
-                        if ui.add(egui::Button::new(egui::RichText::new("Start Live Subtitles").size(28.0)).min_size(egui::vec2(280.0, 80.0))).clicked() {
+                        if ui.add(egui::Button::new(egui::RichText::new("Start Live Subtitles").size(20.0)).min_size(egui::vec2(280.0, 80.0))).clicked() {
                             #[cfg(target_os = "android")]
                             if let Err(e) = start_live_subtitles() {
                                 self.status_msg = format!("Failed to start: {}", e);
