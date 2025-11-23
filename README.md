@@ -111,10 +111,12 @@ To upload to the Play Store, you must build an Android App Bundle (.aab). This p
 
 ## Acknowledgments
 
-NVIDIA parakeet speech to text model: [https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3)
+- **Speech Model:** [Parakeet TDT 0.6b v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) by NVIDIA.
+  - Licensed under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+  - *Note: This application uses a quantized (int8) version of the original model.*
 
-CJ Pais transcribe-rs library: [https://github.com/cjpais/transcribe-rs](https://github.com/cjpais/transcribe-rs)
+- **Inference Backend:** [transcribe-rs](https://github.com/cjpais/transcribe-rs) by CJ Pais.
 
-## License
+## License of this Project
 
 GPLv3
