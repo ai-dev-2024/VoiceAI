@@ -1,7 +1,9 @@
 # Build outputs
 /target/
 /build/
+/build_manual/
 *.apk
+*.idsig
 
 # IDE
 .idea/

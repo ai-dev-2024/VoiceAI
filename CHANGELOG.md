@@ -2,58 +2,51 @@
 
 All notable changes to VoiceAI will be documented in this file.
 
-## [1.0.1] - 2025-12-10
+## [1.0.2] - 2024-12-11
 
 ### Added
-- **Percentage formatting**: "10 percent" → "10%"
-- **Currency formatting**: "30 dollars" → "$30"
-- **Dictionary integration**: @ symbol support ("at grok" → "@grok")
-- **Native Settings Activity** with proper keyboard support
-
-### Changed
-- Settings button now larger and more prominent
-- Improved Settings UI with iOS-style tile layout
-
-### Removed
-- Live Translate/Subtitles feature (not in use case)
-- Legacy dev/notune code
+- Complete Stage 2 post-processing pipeline (`PostProcessor.java`)
+- Number normalization: "twenty five" → "25"
+- Time formatting: "four twenty pm" → "4:20 PM"
+- Year detection: "twenty twenty four" → "2024"
+- Ordinals: "twenty first" → "21st"
+- Ranges: "one to five" → "1–5"
+- Currency: "$100 USD", "$1,000,000"
+- Percentages: "25%", "25.6%", "0.5%"
+- Disfluency removal: "uh", "um", "you know", "like"
+- Punctuation restoration
+- Sentence casing with proper nouns
+- `DictationController` for FUTO-style dictation management
+- 30-second dictation limit toggle
+- Silence detection auto-stop toggle
+- Timer countdown display during dictation
+- Version badge in Settings (v1.0.2)
 
 ### Fixed
-- Personal dictionary auto-save now works correctly
-- Toggle switches for 30-second limit and silence detection
+- Preference key mismatch between Settings and DictationController
+- Personal dictionary encoding issues (now uses `Pattern.quote()`)
+- Text injection now works reliably with all apps
 
-## [1.0.0] - 2025-12-09
+### Changed
+- Unified preferences to use `VoiceAIPrefs`
+- Enhanced README for GitHub with badges and tables
+
+## [1.0.1] - 2024-12-10
 
 ### Added
-- **Voice Dictation Overlay** - Dark transparent overlay UI for voice input
-  - Works with SwiftKey, Gboard, HeliBoard, and other keyboards
-  - Animated sound wave visualization
-  - Silence detection auto-stop (~2 seconds)
-  - Live transcription display during processing
-  
-- **Settings**
-  - 30-second time limit toggle
-  - Auto-stop on silence toggle
-  - Personal dictionary (comma-separated words)
+- Personal dictionary feature
+- Basic percentage and currency formatting
+- Settings activity with tile-based UI
 
-- **Post-Processing**
-  - AI model name corrections (Groq, Gemini, ChatGPT, OpenAI, Claude, Anthropic, Llama, Mistral, Qwen)
-  - Personal dictionary word preservation
+### Fixed
+- Native library loading issues
+- Package name consistency (`com.voiceai.app`)
 
-- **Core Features**
-  - Bundled Parakeet TDT 0.6B v3 INT8 model (~670MB)
-  - Fast offline transcription via ONNX Runtime
-  - Android RecognitionService integration
-  - InputMethodService (IME) support
+## [1.0.0] - 2024-12-08
 
-### Technical
-- Built with Rust (eframe/egui) + Java
-- Cross-compiled for aarch64-linux-android
-- ONNX Runtime optimized for ARM64
-
-## Credits
-
-- **transcribe-rs** by [cjpais](https://github.com/cjpais) - Rust transcription engine
-- **Parakeet TDT** by NVIDIA - Speech recognition model
-- **ONNX Runtime** by Microsoft - Inference engine
-- **notune** by FUTO - Original Android implementation reference
+### Added
+- Initial release
+- Offline voice transcription with Parakeet TDT 0.6B
+- Real-time waveform animation
+- Accessibility service for text injection
+- Support for HeliBoard and SwiftKey

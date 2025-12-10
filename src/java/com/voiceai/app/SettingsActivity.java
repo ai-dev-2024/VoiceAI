@@ -50,7 +50,7 @@ public class SettingsActivity extends Activity {
                 header.setOrientation(LinearLayout.HORIZONTAL);
                 header.setGravity(Gravity.CENTER_VERTICAL);
                 header.setPadding(0, 0, 0, 24);
-        
+
                 TextView backBtn = new TextView(this);
                 backBtn.setText("←");
                 backBtn.setTextSize(24);
@@ -58,24 +58,24 @@ public class SettingsActivity extends Activity {
                 backBtn.setPadding(0, 0, 16, 0);
                 backBtn.setOnClickListener(v -> finish());
                 header.addView(backBtn);
-        
+
                 // Add app icon
                 TextView icon = new TextView(this);
                 icon.setText("🎤");
                 icon.setTextSize(28);
                 icon.setPadding(0, 0, 12, 0);
                 header.addView(icon);
-        
+
                 TextView title = new TextView(this);
                 title.setText("VoiceAI Settings");
                 title.setTextSize(28);
                 title.setTextColor(0xFF1C1C1E);
                 title.setTypeface(null, android.graphics.Typeface.BOLD);
                 header.addView(title);
-        
+
                 // Add version badge
                 TextView versionBadge = new TextView(this);
-                versionBadge.setText("v1.0");
+                versionBadge.setText("v1.0.2");
                 versionBadge.setTextSize(14);
                 versionBadge.setTextColor(Color.WHITE);
                 versionBadge.setBackgroundColor(0xFF007AFF);
@@ -84,12 +84,12 @@ public class SettingsActivity extends Activity {
                 badgeBg.setCornerRadius(12f);
                 versionBadge.setBackground(badgeBg);
                 LinearLayout.LayoutParams badgeParams = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT);
+                                LinearLayout.LayoutParams.WRAP_CONTENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT);
                 badgeParams.setMargins(12, 0, 0, 0);
                 versionBadge.setLayoutParams(badgeParams);
                 header.addView(versionBadge);
-        
+
                 root.addView(header);
 
                 // Recording Settings Section
@@ -173,7 +173,7 @@ public class SettingsActivity extends Activity {
 
                 // About Section
                 root.addView(createSectionTitle("About"));
-        
+
                 LinearLayout aboutCard = createCard();
                 aboutCard.addView(createInfoTile("Version", "1.0.0"));
                 aboutCard.addView(createDivider());
@@ -181,28 +181,28 @@ public class SettingsActivity extends Activity {
                 aboutCard.addView(createDivider());
                 aboutCard.addView(createInfoTile("Runtime", "ONNX Runtime by Microsoft"));
                 aboutCard.addView(createDivider());
-        
+
                 // Add status indicator
                 LinearLayout statusTile = new LinearLayout(this);
                 statusTile.setOrientation(LinearLayout.HORIZONTAL);
                 statusTile.setGravity(Gravity.CENTER_VERTICAL);
                 statusTile.setPadding(16, 14, 16, 14);
-        
+
                 TextView statusLabel = new TextView(this);
                 statusLabel.setText("Status");
                 statusLabel.setTextSize(16);
                 statusLabel.setTextColor(0xFF1C1C1E);
                 LinearLayout.LayoutParams statusLabelParams = new LinearLayout.LayoutParams(0,
-                    LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+                                LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
                 statusLabel.setLayoutParams(statusLabelParams);
                 statusTile.addView(statusLabel);
-        
+
                 TextView statusValue = new TextView(this);
                 statusValue.setText("✅ Ready");
                 statusValue.setTextSize(16);
                 statusValue.setTextColor(0xFF34C759); // Green for ready status
                 statusTile.addView(statusValue);
-        
+
                 aboutCard.addView(statusTile);
                 root.addView(aboutCard);
 

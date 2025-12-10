@@ -36,7 +36,7 @@ import java.util.Map;
 public class RecognizeActivity extends Activity implements DictationController.DictationListener {
 
     private static final String TAG = "VoiceAI";
-    private static final String PREFS_NAME = "voiceai_settings";
+    private static final String PREFS_NAME = "VoiceAIPrefs";
 
     static {
         try {

@@ -19,13 +19,11 @@ import android.widget.Toast;
 public class DictationController {
 
     private static final String TAG = "DictationController";
-    private static final String PREFS_NAME = "voiceai_settings";
 
-    // Settings keys
-    public static final String PREF_TIME_LIMIT_ENABLED = "time_limit_enabled";
-    public static final String PREF_TIME_LIMIT_SECONDS = "time_limit_seconds";
-    public static final String PREF_SILENCE_DETECTION_ENABLED = "silence_detection_enabled";
-    public static final String PREF_SILENCE_THRESHOLD_SECONDS = "silence_threshold_seconds";
+    // Must match SettingsActivity
+    private static final String PREFS_NAME = "VoiceAIPrefs";
+    public static final String PREF_TIME_LIMIT_ENABLED = "transcription_time_limit";
+    public static final String PREF_SILENCE_DETECTION_ENABLED = "auto_stop_on_silence";
 
     // Default values
     public static final int DEFAULT_TIME_LIMIT = 30;
@@ -85,10 +83,10 @@ public class DictationController {
     // ========================================================================
 
     public void loadSettings() {
-        timeLimitEnabled = prefs.getBoolean(PREF_TIME_LIMIT_ENABLED, false);
-        timeLimitSeconds = prefs.getInt(PREF_TIME_LIMIT_SECONDS, DEFAULT_TIME_LIMIT);
+        timeLimitEnabled = prefs.getBoolean(PREF_TIME_LIMIT_ENABLED, true);
+        timeLimitSeconds = DEFAULT_TIME_LIMIT; // Fixed at 30 seconds
         silenceDetectionEnabled = prefs.getBoolean(PREF_SILENCE_DETECTION_ENABLED, true);
-        silenceThresholdSeconds = prefs.getFloat(PREF_SILENCE_THRESHOLD_SECONDS, DEFAULT_SILENCE_THRESHOLD);
+        silenceThresholdSeconds = DEFAULT_SILENCE_THRESHOLD;
 
         Log.d(TAG, "Settings loaded: timeLimit=" + timeLimitEnabled + " (" + timeLimitSeconds + "s), " +
                 "silenceDetection=" + silenceDetectionEnabled + " (" + silenceThresholdSeconds + "s)");
@@ -97,9 +95,7 @@ public class DictationController {
     public void saveSettings() {
         prefs.edit()
                 .putBoolean(PREF_TIME_LIMIT_ENABLED, timeLimitEnabled)
-                .putInt(PREF_TIME_LIMIT_SECONDS, timeLimitSeconds)
                 .putBoolean(PREF_SILENCE_DETECTION_ENABLED, silenceDetectionEnabled)
-                .putFloat(PREF_SILENCE_THRESHOLD_SECONDS, silenceThresholdSeconds)
                 .apply();
 
         Log.d(TAG, "Settings saved");
