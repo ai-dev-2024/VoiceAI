@@ -1,18 +1,27 @@
-/target
-/build_manual/
-/build_aab/
-/.idea/
-/android-sdk/
+# Build outputs
+/target/
+/build/
+*.apk
+
+# IDE
+.idea/
 *.iml
 .vscode/
-.cargo/config.toml
-*.apk
-*.idsig
+
+# Android
 local.properties
+*.keystore
+
+# Rust
+Cargo.lock
+
+# OS
 .DS_Store
-release.keystore
-*.aab
-*.apks
-/libs/
-*.onnx
-._*
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp

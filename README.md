@@ -1,122 +1,101 @@
-# Offline Voice Input (Android)
+# VoiceAI 🎤
 
-[![Download APK](https://img.shields.io/badge/Download-Latest%20APK-blue?style=for-the-badge&logo=android)](https://github.com/notune/android_transcribe_app/releases/latest)
+**A Wispr Flow offline alternative for Android** — Fully local voice dictation with advanced post-processing.
 
-An offline, privacy-focused voice input keyboard and live subtitle tool for Android, built with Rust.
+> Built with [Google Antigravity](https://developers.google.com/project-antigravity) AI coding assistant
 
-## Features
+---
 
-- **Offline Transcription:** Uses deep learning models (Parakeet TDT) to transcribe speech entirely on-device.
-- **Voice Input Keyboard** Use your voice as a text field input method.
-- **Live Subtitles:** Get real-time captions for any audio or video playing on your device (e.g., YouTube, Podcasts, Zoom).
-- **Privacy-First:** No audio data leaves your device.
-- **Rust Backend:** Efficient and safe native code using [transcribe-rs](https://github.com/cjpais/transcribe-rs) (included).
-- **Modern UI:** Built with `egui` and `eframe`.
+## ✨ Features
 
-## Prerequisites (Linux)
+- **100% Offline** — No internet required, all processing happens on-device
+- **Fast Transcription** — Uses NVIDIA Parakeet TDT 0.6B model (int8 quantized)
+- **Advanced Post-Processing** — Automatic punctuation, casing, number formatting
+- **Personal Dictionary** — FUTO-style custom word replacements
+- **Smart Dictation Controls** — 30-second limit toggle, silence detection auto-stop
+- **Universal Text Injection** — Works with any app via Accessibility Service
 
-To build this app, you need the following system packages:
+## 📱 Tested Keyboards
 
+- ✅ **HeliBoard** — Open-source keyboard
+- ✅ **SwiftKey** — Microsoft keyboard
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Rust** — Native Android app with `egui` for main UI
+- **Java** — Android activities, services, and accessibility
+
+### Backend / AI
+- **ONNX Runtime** — Neural network inference
+- **Parakeet TDT 0.6B** — NVIDIA's speech-to-text model (int8 quantized)
+- **transcribe-rs** — Rust transcription library
+
+### Build System
+- **Cargo** — Rust package manager
+- **Android SDK/NDK** — Native compilation
+- **PowerShell** — Windows build script
+
+## 🙏 Credits & Acknowledgments
+
+This project is built upon and inspired by:
+
+- **[transcribe-rs](https://github.com/handy-audio/transcribe-rs)** by Handy Audio — Rust transcription library that powers the core ASR functionality
+- **[FUTO Voice Input](https://gitlab.futo.org/alex/voiceinput)** by FUTO — Inspiration for the personal dictionary UI and dictation settings design
+- **[Wispr Flow](https://wispr.com/flow)** — The original desktop voice dictation app that inspired this Android alternative
+- **NVIDIA NeMo** — For the Parakeet TDT speech recognition model
+
+## 📦 Installation
+
+### From APK
+1. Download `VoiceAI-v1.0.1.apk` from Releases
+2. Install on your Android device
+3. Enable VoiceAI in Settings → Language & Input → Keyboards
+4. Enable Accessibility Service for text injection
+5. Grant microphone permission
+
+### From Source
 ```bash
-sudo pacman -Syu jdk-openjdk rustup unzip zip base-devel cmake
-```
-*(Adjust for your distribution: e.g., `apt install openjdk-17-jdk build-essential cmake unzip` on Ubuntu)*
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/VoiceAI.git
+cd VoiceAI/VoiceAI-v1
 
-Ensure you have the `aarch64-linux-android` target for Rust:
-```bash
-rustup target add aarch64-linux-android
-```
+# Build (Windows PowerShell)
+./build.ps1
 
-Download and extract the parakeet model
-```bash
-curl -L https://blob.handy.computer/parakeet-v3-int8.tar.gz | tar -xz -C assets
-```
-
-### Android SDK Setup (Manual)
-
-Follow these steps to set up the SDK and NDK:
-
-1.  **Setup Directory:**
-    ```bash
-    mkdir -p android-sdk/cmdline-tools
-    cd android-sdk
-    ```
-
-2.  **Download Tools:**
-    Download the command-line tools from [Android Developers](https://developer.android.com/studio#command-tools) or use `wget`:
-    ```bash
-    wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
-    unzip -q cmdline-tools.zip
-    # Move to correct structure: cmdline-tools/latest/bin
-    mkdir -p cmdline-tools/latest
-    mv cmdline-tools/bin cmdline-tools/lib cmdline-tools/NOTICE.txt cmdline-tools/source.properties cmdline-tools/latest/
-    rm cmdline-tools.zip
-    ```
-
-3.  **Install Packages:**
-    ```bash
-    export ANDROID_HOME=$(pwd)
-    export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
-    
-    yes | sdkmanager --licenses
-    # Install Platform, Build Tools, and NDK (Version 26 is required)
-    sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools" "ndk;26.1.10909125"
-    ```
-
-## Building
-
-### APK
-You can build an APK with:
-```bash
-ANDROID_HOME=$(pwd)/android-sdk/ ./build.sh
-# Output: android_transcribe_app_release.apk
+# Install
+adb install -r VoiceAI-v1.0.1.apk
 ```
 
-### Release AAB (Google Play Ready)
-To upload to the Play Store, you must build an Android App Bundle (.aab). This project uses **Play Asset Delivery** (Install-Time) to handle the large model files (>150MB).
+## 📖 Usage
 
-1.  **Run the AAB Build Script:**
-    ```bash
-    ./build_aab.sh
-    ```
-    This will:
-    - Build the Rust library in `release` mode.
-    - Create a `base` module for the app code.
-    - Create a `model_assets` module for the large model files (Install-Time Asset Pack).
-    - Generate `android_transcribe_app.aab`.
-    - Sign it with a generated `release.keystore` (password: `password`).
+1. Open any text field in any app
+2. Tap the microphone button on your keyboard (HeliBoard, SwiftKey, etc.)
+3. Speak naturally — VoiceAI will transcribe and insert text
+4. Tap to stop or wait for silence detection / time limit
 
-    **Output:** `android_transcribe_app.aab`
+### Post-Processing Examples
 
-2.  **Testing the AAB on a Device:**
-    You cannot install an `.aab` directly. Use `bundletool` (downloaded to `libs/` by the script):
+| You Say | VoiceAI Outputs |
+|---------|-----------------|
+| "twenty five percent" | 25% |
+| "one hundred US dollars" | $100 USD |
+| "twenty twenty four" | 2024 |
+| "the meeting is at four twenty pm" | the meeting is at 4:20 PM |
+| "uh so i was thinking um" | So, I was thinking |
 
-    ```bash
-    # 1. Generate APKs from the bundle
-    java -jar libs/bundletool.jar build-apks \
-        --bundle=android_transcribe_app.aab \
-        --output=android_transcribe_app.apks \
-        --ks=release.keystore \
-        --ks-pass=pass:password \
-        --ks-key-alias=release \
-        --key-pass=pass:password \
-        --overwrite
+## ⚙️ Settings
 
-    # 2. Install to connected device
-    # Ensure ADB is in your PATH or provide it via --adb
-    java -jar libs/bundletool.jar install-apks \
-        --apks=android_transcribe_app.apks \
-        --adb=android-sdk/platform-tools/adb
-    ```
+Access via the main app → **Open Settings**:
 
-## Acknowledgments
+- **30-Second Dictation Limit** — Auto-stop after 30 seconds
+- **Silence Detection** — Auto-stop when you stop speaking
+- **Personal Dictionary** — Add custom words (e.g., `@Groq, ChatGPT, Anthropic`)
 
-- **Speech Model:** [Parakeet TDT 0.6b v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) by NVIDIA.
-  - Licensed under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).
-  - *Note: This application uses a quantized (int8) version of the original model.*
+## 📄 License
 
-- **Inference Backend:** [transcribe-rs](https://github.com/cjpais/transcribe-rs) by CJ Pais.
+MIT License — See [LICENSE](LICENSE) for details.
 
-## License of this Project
+---
 
-[MIT](LICENSE)
+**VoiceAI** — Voice dictation, reimagined for Android. Offline. Private. Fast.

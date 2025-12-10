@@ -241,25 +241,17 @@ impl eframe::App for TranscribeApp {
                         ui.separator();
                         ui.add_space(30.0);
 
-                        // 2. Live Translate
-                        ui.label(egui::RichText::new("Live Translate").size(24.0).strong());
-                        ui.label(egui::RichText::new("Get live subtitles for any video/audio on the phone.").size(16.0));
-                        ui.label(egui::RichText::new("After starting, select 'Share entire screen' for best results.").size(16.0));
+                        // Settings & Dictionary - Large prominent button
+                        ui.label(egui::RichText::new("⚙️ Settings & Personal Dictionary").size(24.0).strong());
+                        ui.label(egui::RichText::new("Configure recording options and add custom words.").size(16.0));
                         
                         ui.add_space(20.0);
                         
-                        if ui.add(egui::Button::new(egui::RichText::new("Start Live Subtitles").size(20.0)).min_size(egui::vec2(280.0, 80.0))).clicked() {
-                            #[cfg(target_os = "android")]
-                            if let Err(e) = start_live_subtitles() {
-                                self.status_msg = format!("Failed to start: {}", e);
-                            }
+                        #[cfg(target_os = "android")]
+                        if ui.add(egui::Button::new(egui::RichText::new("⚙ Open Settings").size(24.0)).min_size(egui::vec2(280.0, 80.0))).clicked() {
+                            let _ = open_settings_activity();
                         }
                         
-                        ui.add_space(40.0);
-                        if ui.button(egui::RichText::new("⚙ Settings").size(16.0)).clicked() {
-                            self.show_settings = true;
-                        }
-
                         ui.add_space(20.0);
                         ui.label(format!("Status: {}", self.status_msg));
                     }
@@ -293,6 +285,42 @@ fn start_live_subtitles() -> anyhow::Result<()> {
     )?;
     
     // FLAG_ACTIVITY_NEW_TASK
+    env.call_method(
+        &intent_obj, 
+        "addFlags", 
+        "(I)Landroid/content/Intent;", 
+        &[268435456.into()]
+    )?;
+
+    env.call_method(
+        &activity,
+        "startActivity",
+        "(Landroid/content/Intent;)V",
+        &[(&intent_obj).into()]
+    )?;
+    
+    Ok(())
+}
+
+#[cfg(target_os = "android")]
+fn open_settings_activity() -> anyhow::Result<()> {
+    let ctx = ndk_context::android_context();
+    let vm = unsafe { jni::JavaVM::from_raw(ctx.vm().cast()) }?;
+    let mut env = vm.attach_current_thread()?;
+    let activity = unsafe { JObject::from_raw(ctx.context().cast()) };
+    
+    let intent_class = env.find_class("android/content/Intent")?;
+    let intent_obj = env.new_object(&intent_class, "()V", &[])?;
+    let pkg_name = env.new_string("com.voiceai.app")?;
+    let cls_name = env.new_string("com.voiceai.app.SettingsActivity")?;
+    
+    env.call_method(
+        &intent_obj,
+        "setClassName",
+        "(Ljava/lang/String;Ljava/lang/String;)Landroid/content/Intent;",
+        &[(&pkg_name).into(), (&cls_name).into()]
+    )?;
+    
     env.call_method(
         &intent_obj, 
         "addFlags", 
@@ -582,7 +610,7 @@ fn ensure_engine_loaded(
 
 #[cfg(target_os = "android")]
 #[no_mangle]
-pub unsafe extern "system" fn Java_dev_notune_transcribe_RustInputMethodService_initNative(
+pub unsafe extern "system" fn Java_com_voiceai_app_RustInputMethodService_initNative(
     mut env: JNIEnv,
     _class: JClass,
     service: JObject,
@@ -607,7 +635,7 @@ pub unsafe extern "system" fn Java_dev_notune_transcribe_RustInputMethodService_
 
 #[cfg(target_os = "android")]
 #[no_mangle]
-pub unsafe extern "system" fn Java_dev_notune_transcribe_RustInputMethodService_cleanupNative(
+pub unsafe extern "system" fn Java_com_voiceai_app_RustInputMethodService_cleanupNative(
     _env: JNIEnv,
     _class: JClass,
 ) {
@@ -616,7 +644,7 @@ pub unsafe extern "system" fn Java_dev_notune_transcribe_RustInputMethodService_
 
 #[cfg(target_os = "android")]
 #[no_mangle]
-pub unsafe extern "system" fn Java_dev_notune_transcribe_RustInputMethodService_startRecording(
+pub unsafe extern "system" fn Java_com_voiceai_app_RustInputMethodService_startRecording(
     mut env: JNIEnv,
     _class: JClass,
 ) {
@@ -658,7 +686,7 @@ pub unsafe extern "system" fn Java_dev_notune_transcribe_RustInputMethodService_
 
 #[cfg(target_os = "android")]
 #[no_mangle]
-pub unsafe extern "system" fn Java_dev_notune_transcribe_RustInputMethodService_stopRecording(
+pub unsafe extern "system" fn Java_com_voiceai_app_RustInputMethodService_stopRecording(
     mut env: JNIEnv,
     _class: JClass,
 ) {
@@ -724,7 +752,7 @@ static LIVE_STATE: Mutex<Option<LiveSubtitleState>> = Mutex::new(None);
 
 #[cfg(target_os = "android")]
 #[no_mangle]
-pub unsafe extern "system" fn Java_dev_notune_transcribe_LiveSubtitleService_initNative(
+pub unsafe extern "system" fn Java_com_voiceai_app_LiveSubtitleService_initNative(
     mut env: JNIEnv,
     _class: JClass,
     service: JObject,
@@ -830,7 +858,7 @@ pub unsafe extern "system" fn Java_dev_notune_transcribe_LiveSubtitleService_ini
 
 #[cfg(target_os = "android")]
 #[no_mangle]
-pub unsafe extern "system" fn Java_dev_notune_transcribe_LiveSubtitleService_cleanupNative(
+pub unsafe extern "system" fn Java_com_voiceai_app_LiveSubtitleService_cleanupNative(
     _env: JNIEnv,
     _class: JClass,
 ) {
@@ -839,7 +867,7 @@ pub unsafe extern "system" fn Java_dev_notune_transcribe_LiveSubtitleService_cle
 
 #[cfg(target_os = "android")]
 #[no_mangle]
-pub unsafe extern "system" fn Java_dev_notune_transcribe_LiveSubtitleService_setUpdateInterval(
+pub unsafe extern "system" fn Java_com_voiceai_app_LiveSubtitleService_setUpdateInterval(
     _env: JNIEnv,
     _class: JClass,
     interval_seconds: jfloat,
@@ -853,7 +881,7 @@ pub unsafe extern "system" fn Java_dev_notune_transcribe_LiveSubtitleService_set
 
 #[cfg(target_os = "android")]
 #[no_mangle]
-pub unsafe extern "system" fn Java_dev_notune_transcribe_LiveSubtitleService_pushAudio(
+pub unsafe extern "system" fn Java_com_voiceai_app_LiveSubtitleService_pushAudio(
     env: JNIEnv,
     _class: JClass,
     data: jni::objects::JFloatArray,
@@ -897,4 +925,156 @@ pub unsafe extern "system" fn Java_dev_notune_transcribe_LiveSubtitleService_pus
             }
         }
     }
+}
+
+// --- RecognizeActivity JNI ---
+
+#[cfg(target_os = "android")]
+static RECOGNIZE_STATE: Mutex<Option<ImeState>> = Mutex::new(None);
+
+#[cfg(target_os = "android")]
+#[no_mangle]
+pub unsafe extern "system" fn Java_com_voiceai_app_RecognizeActivity_initNative(
+    mut env: JNIEnv,
+    _class: JClass,
+    activity: JObject,
+) {
+    android_logger::init_once(android_logger::Config::default().with_max_level(log::LevelFilter::Info));
+    let vm = env.get_java_vm().expect("Failed to get JavaVM");
+    let vm_arc = Arc::new(vm);
+    let activity_ref = env.new_global_ref(&activity).expect("Failed to ref activity");
+    
+    let mut state_guard = RECOGNIZE_STATE.lock().unwrap();
+    *state_guard = Some(ImeState {
+        stream: None,
+        audio_buffer: Arc::new(Mutex::new(Vec::new())),
+        jvm: vm_arc.clone(),
+        service_ref: activity_ref.clone(),
+    });
+    
+    drop(state_guard);
+    
+    ensure_engine_loaded(&vm_arc, &activity_ref, "onStatusUpdate");
+}
+
+#[cfg(target_os = "android")]
+#[no_mangle]
+pub unsafe extern "system" fn Java_com_voiceai_app_RecognizeActivity_cleanupNative(
+    _env: JNIEnv,
+    _class: JClass,
+) {
+    *RECOGNIZE_STATE.lock().unwrap() = None;
+}
+
+#[cfg(target_os = "android")]
+#[no_mangle]
+pub unsafe extern "system" fn Java_com_voiceai_app_RecognizeActivity_startRecording(
+    mut env: JNIEnv,
+    _class: JClass,
+) {
+    let mut state_guard = RECOGNIZE_STATE.lock().unwrap();
+    if let Some(state) = state_guard.as_mut() {
+         let host = cpal::default_host();
+         let device = match host.default_input_device() {
+             Some(d) => d,
+             None => return,
+         };
+         
+         let config = cpal::StreamConfig {
+            channels: 1,
+            sample_rate: cpal::SampleRate(16000),
+            buffer_size: cpal::BufferSize::Default,
+         };
+         
+         state.audio_buffer.lock().unwrap().clear();
+         let buffer_clone = state.audio_buffer.clone();
+         let jvm_clone = state.jvm.clone();
+         let activity_ref_clone = state.service_ref.clone();
+         
+         // Audio level callback counter
+         let sample_counter = Arc::new(Mutex::new(0u64));
+         let sample_counter_clone = sample_counter.clone();
+         
+         let stream = device.build_input_stream(
+             &config,
+             move |data: &[f32], _: &_| {
+                 buffer_clone.lock().unwrap().extend_from_slice(data);
+                 
+                 // Calculate RMS for audio level every ~50ms (800 samples at 16kHz)
+                 let mut counter = sample_counter_clone.lock().unwrap();
+                 *counter += data.len() as u64;
+                 if *counter >= 800 {
+                     *counter = 0;
+                     let sum_sq: f32 = data.iter().map(|&x| x * x).sum();
+                     let rms = (sum_sq / data.len() as f32).sqrt();
+                     let level = (rms * 5.0).min(1.0); // Scale for visibility
+                     
+                     // Send audio level to Java
+                     if let Ok(mut env) = jvm_clone.attach_current_thread() {
+                         let activity_obj = activity_ref_clone.as_obj();
+                         let _ = env.call_method(activity_obj, "onAudioLevel", "(F)V", &[level.into()]);
+                     }
+                 }
+             },
+             |e| log::error!("Stream err: {}", e),
+             None,
+         );
+         
+         if let Ok(s) = stream {
+             s.play().ok();
+             state.stream = Some(SendStream(s));
+             
+             let msg = env.new_string("Listening...").unwrap();
+             let _ = env.call_method(state.service_ref.as_obj(), "onStatusUpdate", "(Ljava/lang/String;)V", &[(&msg).into()]);
+         }
+    }
+}
+
+#[cfg(target_os = "android")]
+#[no_mangle]
+pub unsafe extern "system" fn Java_com_voiceai_app_RecognizeActivity_stopRecording(
+    mut env: JNIEnv,
+    _class: JClass,
+) {
+    let (buffer, jvm, activity_ref) = {
+        let mut state_guard = RECOGNIZE_STATE.lock().unwrap();
+        if let Some(state) = state_guard.as_mut() {
+            state.stream = None;
+            (state.audio_buffer.lock().unwrap().clone(), state.jvm.clone(), state.service_ref.clone())
+        } else {
+            return;
+        }
+    };
+    
+    let engine_arc = {
+        let guard = GLOBAL_ENGINE.lock().unwrap();
+        if guard.is_none() { return; }
+        guard.as_ref().unwrap().clone()
+    };
+
+    let msg = env.new_string("Transcribing...").unwrap();
+    let _ = env.call_method(activity_ref.as_obj(), "onStatusUpdate", "(Ljava/lang/String;)V", &[(&msg).into()]);
+    
+    std::thread::spawn(move || {
+        let mut env = jvm.attach_current_thread().unwrap();
+        let activity_obj = activity_ref.as_obj();
+        
+        let res = {
+             let mut eng = engine_arc.lock().unwrap();
+             eng.transcribe_samples(buffer, None)
+        };
+        
+        match res {
+            Ok(r) => {
+                let msg = env.new_string("Ready").unwrap();
+                let _ = env.call_method(activity_obj, "onStatusUpdate", "(Ljava/lang/String;)V", &[(&msg).into()]);
+                let txt = env.new_string(r.text).unwrap();
+                let _ = env.call_method(activity_obj, "onTextTranscribed", "(Ljava/lang/String;)V", &[(&txt).into()]);
+            },
+            Err(e) => {
+                let msg = env.new_string(format!("Error: {}", e)).unwrap();
+                let _ = env.call_method(activity_obj, "onStatusUpdate", "(Ljava/lang/String;)V", &[(&msg).into()]);
+            }
+        }
+    });
 }
