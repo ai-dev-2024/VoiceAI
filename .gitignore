@@ -27,3 +27,10 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.swp
+
+# Large model files (download separately)
+/assets/parakeet-tdt-0.6b-v3-int8/*.onnx
+
+# ONNX Runtime libs (rebuild will download)
+/libs/onnxruntime/jni/
+/libs/onnxruntime/*.jar

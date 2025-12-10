@@ -119,6 +119,13 @@ This project is built upon and inspired by:
 git clone https://github.com/ai-dev-2024/VoiceAI.git
 cd VoiceAI/VoiceAI-v1
 
+# Download model files (required - not included due to size)
+# Download from: https://huggingface.co/nvidia/parakeet-tdt-0.6b
+# Place in: assets/parakeet-tdt-0.6b-v3-int8/
+#   - encoder-model.int8.onnx
+#   - decoder_joint-model.int8.onnx  
+#   - nemo128.onnx
+
 # Build (Windows PowerShell)
 ./build.ps1
 
@@ -130,6 +137,7 @@ adb install -r VoiceAI-v1.0.2.apk
 - Android SDK (API 36)
 - Android NDK 28
 - Rust toolchain with `aarch64-linux-android` target
+- Parakeet TDT 0.6B model files (~600MB)
 
 ---
 
