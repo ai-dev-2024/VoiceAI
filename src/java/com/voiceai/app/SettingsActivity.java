@@ -12,15 +12,19 @@ import android.text.InputType;
 import android.view.Gravity;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.view.View;
 
 /**
  * SettingsActivity - Modern tile-based settings UI for VoiceAI (iPhone-like)
  */
 public class SettingsActivity extends Activity {
+
+        public static final String APP_VERSION = "1.1.0";
 
         public static final String PREFS_NAME = "VoiceAIPrefs";
         public static final String PREF_TIME_LIMIT = "transcription_time_limit";
@@ -75,18 +79,19 @@ public class SettingsActivity extends Activity {
 
                 // Add version badge
                 TextView versionBadge = new TextView(this);
-                versionBadge.setText("v1.0.2");
-                versionBadge.setTextSize(14);
+                versionBadge.setText("v" + APP_VERSION);
+                versionBadge.setTextSize(12);
                 versionBadge.setTextColor(Color.WHITE);
-                versionBadge.setBackgroundColor(0xFF007AFF);
-                versionBadge.setPadding(8, 4, 8, 4);
+                versionBadge.setPadding(16, 6, 16, 6);
                 GradientDrawable badgeBg = new GradientDrawable();
+                badgeBg.setColor(0xFF007AFF); // Blue background
                 badgeBg.setCornerRadius(12f);
                 versionBadge.setBackground(badgeBg);
                 LinearLayout.LayoutParams badgeParams = new LinearLayout.LayoutParams(
                                 LinearLayout.LayoutParams.WRAP_CONTENT,
                                 LinearLayout.LayoutParams.WRAP_CONTENT);
                 badgeParams.setMargins(12, 0, 0, 0);
+                badgeParams.gravity = Gravity.CENTER_VERTICAL;
                 versionBadge.setLayoutParams(badgeParams);
                 header.addView(versionBadge);
 
@@ -129,6 +134,94 @@ public class SettingsActivity extends Activity {
                                         startActivity(intent);
                                 }));
                 root.addView(keyboardCard);
+
+                // Accessibility Section (IMPORTANT for SwiftKey)
+                root.addView(createSectionTitle("Accessibility"));
+
+                LinearLayout accessCard = createCard();
+
+                // Status indicator
+                boolean isAccessEnabled = VoiceTextInjectionService.isServiceEnabled(this);
+                LinearLayout accessTile = new LinearLayout(this);
+                accessTile.setOrientation(LinearLayout.HORIZONTAL);
+                accessTile.setGravity(Gravity.CENTER_VERTICAL);
+                accessTile.setPadding(16, 14, 16, 14);
+
+                TextView accessIcon = new TextView(this);
+                accessIcon.setText(isAccessEnabled ? "✅" : "⚠️");
+                accessIcon.setTextSize(20);
+                accessIcon.setPadding(0, 0, 12, 0);
+                accessTile.addView(accessIcon);
+
+                LinearLayout accessTextLayout = new LinearLayout(this);
+                accessTextLayout.setOrientation(LinearLayout.VERTICAL);
+                LinearLayout.LayoutParams accessTextParams = new LinearLayout.LayoutParams(0,
+                                LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+                accessTextLayout.setLayoutParams(accessTextParams);
+
+                TextView accessTitle = new TextView(this);
+                accessTitle.setText("Text Injection Service");
+                accessTitle.setTextSize(16);
+                accessTitle.setTextColor(0xFF1C1C1E);
+                accessTextLayout.addView(accessTitle);
+
+                TextView accessSubtitle = new TextView(this);
+                accessSubtitle.setText(isAccessEnabled ? "Enabled - text will be inserted directly"
+                                : "Required for SwiftKey and other apps");
+                accessSubtitle.setTextSize(13);
+                accessSubtitle.setTextColor(isAccessEnabled ? 0xFF34C759 : 0xFFFF9500);
+                accessTextLayout.addView(accessSubtitle);
+                accessTile.addView(accessTextLayout);
+
+                TextView accessBtn = new TextView(this);
+                accessBtn.setText(isAccessEnabled ? "Enabled" : "Enable →");
+                accessBtn.setTextSize(14);
+                accessBtn.setTextColor(isAccessEnabled ? 0xFF34C759 : 0xFF007AFF);
+                accessTile.addView(accessBtn);
+
+                accessTile.setOnClickListener(v -> {
+                        Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                        startActivity(intent);
+                });
+                accessCard.addView(accessTile);
+                root.addView(accessCard);
+
+                // AI Settings Section
+                root.addView(createSectionTitle("AI Post-Processing"));
+
+                LinearLayout aiCard = createCard();
+
+                TextView aiHint = new TextView(this);
+                aiHint.setText("Enter Groq API key for Wispr Flow-style AI formatting. Get free key at console.groq.com");
+                aiHint.setTextSize(13);
+                aiHint.setTextColor(0xFF8E8E93);
+                aiHint.setPadding(16, 16, 16, 8);
+                aiCard.addView(aiHint);
+
+                EditText apiKeyInput = new EditText(this);
+                apiKeyInput.setHint("gsk_xxxxx... (leave empty for offline)");
+                apiKeyInput.setTextColor(0xFF1C1C1E);
+                apiKeyInput.setHintTextColor(0xFFC7C7CC);
+                apiKeyInput.setTextSize(14);
+                apiKeyInput.setPadding(16, 16, 16, 16);
+                apiKeyInput.setSingleLine(true);
+                apiKeyInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                apiKeyInput.setBackground(null);
+                apiKeyInput.setText(prefs.getString("groq_api_key", ""));
+
+                apiKeyInput.addTextChangedListener(new android.text.TextWatcher() {
+                        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                        }
+
+                        public void onTextChanged(CharSequence s, int start, int before, int count) {
+                        }
+
+                        public void afterTextChanged(android.text.Editable s) {
+                                prefs.edit().putString("groq_api_key", s.toString()).apply();
+                        }
+                });
+                aiCard.addView(apiKeyInput);
+                root.addView(aiCard);
 
                 // Personal Dictionary Section
                 root.addView(createSectionTitle("Personal Dictionary"));
@@ -175,7 +268,7 @@ public class SettingsActivity extends Activity {
                 root.addView(createSectionTitle("About"));
 
                 LinearLayout aboutCard = createCard();
-                aboutCard.addView(createInfoTile("Version", "1.0.0"));
+                aboutCard.addView(createInfoTile("Version", APP_VERSION));
                 aboutCard.addView(createDivider());
                 aboutCard.addView(createInfoTile("Engine", "Parakeet TDT by NVIDIA"));
                 aboutCard.addView(createDivider());
@@ -243,7 +336,7 @@ public class SettingsActivity extends Activity {
                 LinearLayout tile = new LinearLayout(this);
                 tile.setOrientation(LinearLayout.HORIZONTAL);
                 tile.setGravity(Gravity.CENTER_VERTICAL);
-                tile.setPadding(16, 14, 16, 14);
+                tile.setPadding(24, 20, 24, 20);
 
                 LinearLayout textPart = new LinearLayout(this);
                 textPart.setOrientation(LinearLayout.VERTICAL);
@@ -253,8 +346,9 @@ public class SettingsActivity extends Activity {
 
                 TextView titleTv = new TextView(this);
                 titleTv.setText(title);
-                titleTv.setTextSize(16);
+                titleTv.setTextSize(17);
                 titleTv.setTextColor(0xFF1C1C1E);
+                titleTv.setTypeface(null, android.graphics.Typeface.BOLD);
                 textPart.addView(titleTv);
 
                 TextView subtitleTv = new TextView(this);
@@ -265,10 +359,47 @@ public class SettingsActivity extends Activity {
 
                 tile.addView(textPart);
 
-                Switch toggle = new Switch(this);
-                toggle.setChecked(prefs.getBoolean(prefKey, defaultValue));
-                toggle.setOnCheckedChangeListener((btn, checked) -> prefs.edit().putBoolean(prefKey, checked).apply());
-                tile.addView(toggle);
+                // Custom iOS-style toggle switch
+                final boolean[] isOn = { prefs.getBoolean(prefKey, defaultValue) };
+
+                FrameLayout toggleContainer = new FrameLayout(this);
+                toggleContainer.setLayoutParams(new LinearLayout.LayoutParams(100, 50));
+
+                GradientDrawable trackBg = new GradientDrawable();
+                trackBg.setCornerRadius(25f);
+                trackBg.setColor(isOn[0] ? 0xFF34C759 : 0xFFE5E5EA); // Green when on, gray when off
+                toggleContainer.setBackground(trackBg);
+
+                // Thumb (white circle)
+                View thumb = new View(this);
+                GradientDrawable thumbBg = new GradientDrawable();
+                thumbBg.setShape(GradientDrawable.OVAL);
+                thumbBg.setColor(Color.WHITE);
+                thumb.setBackground(thumbBg);
+                thumb.setElevation(4f);
+                FrameLayout.LayoutParams thumbParams = new FrameLayout.LayoutParams(42, 42);
+                thumbParams.gravity = Gravity.CENTER_VERTICAL;
+                thumbParams.setMargins(isOn[0] ? 54 : 4, 4, 4, 4);
+                thumb.setLayoutParams(thumbParams);
+                toggleContainer.addView(thumb);
+
+                // Click handler
+                toggleContainer.setClickable(true);
+                toggleContainer.setFocusable(true);
+                toggleContainer.setOnClickListener(v -> {
+                        isOn[0] = !isOn[0];
+                        prefs.edit().putBoolean(prefKey, isOn[0]).apply();
+
+                        // Update visual
+                        ((GradientDrawable) toggleContainer.getBackground())
+                                        .setColor(isOn[0] ? 0xFF34C759 : 0xFFE5E5EA);
+                        FrameLayout.LayoutParams newParams = new FrameLayout.LayoutParams(42, 42);
+                        newParams.gravity = Gravity.CENTER_VERTICAL;
+                        newParams.setMargins(isOn[0] ? 54 : 4, 4, 4, 4);
+                        thumb.setLayoutParams(newParams);
+                });
+
+                tile.addView(toggleContainer);
 
                 return tile;
         }

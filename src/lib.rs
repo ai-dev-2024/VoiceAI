@@ -664,11 +664,33 @@ pub unsafe extern "system" fn Java_com_voiceai_app_RustInputMethodService_startR
          
          state.audio_buffer.lock().unwrap().clear();
          let buffer_clone = state.audio_buffer.clone();
+         let jvm_clone = state.jvm.clone();
+         let service_ref_clone = state.service_ref.clone();
+         
+         // Audio level callback counter for waveform animation
+         let sample_counter = Arc::new(Mutex::new(0u64));
+         let sample_counter_clone = sample_counter.clone();
          
          let stream = device.build_input_stream(
              &config,
              move |data: &[f32], _: &_| {
                  buffer_clone.lock().unwrap().extend_from_slice(data);
+                 
+                 // Calculate RMS for audio level every ~50ms (800 samples at 16kHz)
+                 let mut counter = sample_counter_clone.lock().unwrap();
+                 *counter += data.len() as u64;
+                 if *counter >= 800 {
+                     *counter = 0;
+                     let sum_sq: f32 = data.iter().map(|&x| x * x).sum();
+                     let rms = (sum_sq / data.len() as f32).sqrt();
+                     let level = (rms * 5.0).min(1.0); // Scale for visibility
+                     
+                     // Send audio level to Java for waveform animation
+                     if let Ok(mut env) = jvm_clone.attach_current_thread() {
+                         let service_obj = service_ref_clone.as_obj();
+                         let _ = env.call_method(service_obj, "onAudioLevel", "(F)V", &[level.into()]);
+                     }
+                 }
              },
              |e| log::error!("Stream err: {}", e),
              None,
@@ -683,6 +705,7 @@ pub unsafe extern "system" fn Java_com_voiceai_app_RustInputMethodService_startR
          }
     }
 }
+
 
 #[cfg(target_os = "android")]
 #[no_mangle]

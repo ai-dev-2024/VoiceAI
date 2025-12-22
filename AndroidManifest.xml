@@ -45,8 +45,6 @@
             android:name=".RecognizeActivity"
             android:label="VoiceAI Dictation"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
-            android:launchMode="singleInstance"
-            android:clearTaskOnLaunch="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.speech.action.RECOGNIZE_SPEECH" />

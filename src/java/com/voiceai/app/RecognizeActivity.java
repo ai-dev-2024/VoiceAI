@@ -14,6 +14,8 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.speech.RecognizerIntent;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -58,6 +60,9 @@ public class RecognizeActivity extends Activity implements DictationController.D
     // Dictation Controller for timer and silence detection
     private DictationController dictationController;
 
+    // Haptic feedback
+    private Vibrator vibrator;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,6 +74,9 @@ public class RecognizeActivity extends Activity implements DictationController.D
         getWindow().setDimAmount(0.5f); // 50% dim
 
         mainHandler = new Handler(Looper.getMainLooper());
+
+        // Initialize vibrator for haptic feedback
+        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
         // Initialize DictationController
         dictationController = new DictationController(this);
@@ -86,6 +94,11 @@ public class RecognizeActivity extends Activity implements DictationController.D
             isRecording = true;
             statusText.setText("Listening...");
             waveformView.startAnimation();
+
+            // Haptic feedback on start (subtle)
+            if (vibrator != null && vibrator.hasVibrator()) {
+                vibrator.vibrate(VibrationEffect.createOneShot(30, VibrationEffect.DEFAULT_AMPLITUDE));
+            }
 
             // Start DictationController (handles timer and silence detection)
             dictationController.startDictation();
@@ -285,15 +298,77 @@ public class RecognizeActivity extends Activity implements DictationController.D
         mainHandler.post(() -> {
             Log.d(TAG, "Raw transcribed: " + text);
 
-            // Run through Stage 2 post-processing pipeline
-            String processed = PostProcessor.processTranscript(text);
+            // Get personal dictionary for post-processing
+            SharedPreferences dictPrefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            String dictStr = dictPrefs.getString("personal_dictionary", "");
+            java.util.Map<String, String> personalDict = new java.util.HashMap<>();
 
-            // Apply personal dictionary on top
-            transcribedText = applyPersonalDictionary(processed);
+            if (!dictStr.isEmpty()) {
+                String[] words = dictStr.split(",");
+                for (String word : words) {
+                    word = word.trim();
+                    if (!word.isEmpty()) {
+                        // Map lowercase to exact case
+                        personalDict.put(word.toLowerCase(), word);
+                    }
+                }
+            }
 
+            // Use new modular VoiceAI processing pipeline
+            com.voiceai.app.processing.ProcessingContext context = com.voiceai.app.processing.ProcessingContext
+                    .builder()
+                    .personalDictionary(personalDict)
+                    .courseCorrection(true)
+                    .fillerRemoval(true)
+                    .numberNormalization(true)
+                    .punctuationRestoration(true)
+                    .casingEnabled(true)
+                    .debugMode(true) // ENABLED for debugging
+                    .build();
+
+            Log.d(TAG, "=== POST-PROCESSING START ===");
+            Log.d(TAG, "Raw input: \"" + text + "\"");
+
+            // Check for Groq API key for LLM post-processing
+            String groqApiKey = dictPrefs.getString("groq_api_key", "");
+
+            String processed;
+            if (groqApiKey != null && !groqApiKey.isEmpty()) {
+                Log.d(TAG, "Using LLM pipeline (Wispr Flow-style)");
+                processed = com.voiceai.app.processing.VoiceAIPipeline.createWithLLM(groqApiKey)
+                        .process(text, context);
+            } else {
+                Log.d(TAG, "Using standard pipeline (no API key)");
+                processed = com.voiceai.app.processing.VoiceAIPipeline.create()
+                        .process(text, context);
+            }
+
+            Log.d(TAG, "Pipeline output: \"" + processed + "\"");
+            Log.d(TAG, "=== POST-PROCESSING END ===");
+
+            // If pipeline returns empty, use original text with basic casing
+            if (processed == null || processed.isEmpty()) {
+                processed = text;
+                if (processed != null && !processed.isEmpty()) {
+                    processed = processed.substring(0, 1).toUpperCase() + processed.substring(1);
+                }
+            }
+
+            transcribedText = processed;
             Log.d(TAG, "Processed: " + transcribedText);
             resultText.setText(transcribedText);
             statusText.setText("Done!");
+
+            // Haptic feedback on complete (confirmation pattern)
+            if (vibrator != null && vibrator.hasVibrator()) {
+                vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE));
+            }
+
+            // Stop dictation controller before returning result
+            if (dictationController != null) {
+                dictationController.stopDictation(DictationController.StopReason.USER_STOPPED);
+            }
+
             mainHandler.postDelayed(() -> returnResult(transcribedText), 200);
         });
     }
@@ -328,8 +403,15 @@ public class RecognizeActivity extends Activity implements DictationController.D
     }
 
     // Called from Rust with audio level (0.0 - 1.0) - RESPONSIVE WAVEFORM
+    private int audioLevelCallCount = 0;
+
     public void onAudioLevel(float level) {
         mainHandler.post(() -> {
+            audioLevelCallCount++;
+            if (audioLevelCallCount % 50 == 0) {
+                Log.d(TAG, "onAudioLevel: " + level + " (call #" + audioLevelCallCount + ")");
+            }
+
             if (waveformView != null) {
                 waveformView.setAudioLevel(level);
             }
@@ -345,27 +427,22 @@ public class RecognizeActivity extends Activity implements DictationController.D
         Log.d(TAG, "returnResult: text=" + text + ", fromService=" + fromService);
 
         if (text != null && !text.isEmpty()) {
-            // ALWAYS inject text via accessibility for ALL apps (Word, Google, etc.)
-            // This is the most reliable method that works everywhere
-            Log.d(TAG, "Injecting text via accessibility service");
-            boolean injected = VoiceTextInjectionService.injectText(this, text);
+            // FUTO Voice Pattern: Return text via Activity result (works with SwiftKey)
+            ArrayList<String> results = new ArrayList<>();
+            results.add(text);
 
-            if (!injected) {
-                Log.d(TAG, "Accessibility injection failed, text copied to clipboard");
-            }
+            Intent returnIntent = new Intent();
+            returnIntent.putStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS, results);
+            returnIntent.putExtra(RecognizerIntent.EXTRA_CONFIDENCE_SCORES, new float[] { 1.0f });
 
-            // If launched from VoiceRecognitionService (HeliBoard), also send results
-            // via service callback (some keyboards handle this better)
+            // For HeliBoard: also send via VoiceRecognitionService callback
             if (fromService) {
+                Log.d(TAG, "Sending results via VoiceRecognitionService callback");
                 VoiceRecognitionService.sendResults(text);
             }
 
-            // Also set activity result for keyboards that support it
-            ArrayList<String> results = new ArrayList<>();
-            results.add(text);
-            Intent resultIntent = new Intent();
-            resultIntent.putStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS, results);
-            setResult(RESULT_OK, resultIntent);
+            Log.d(TAG, "Setting RESULT_OK with EXTRA_RESULTS");
+            setResult(RESULT_OK, returnIntent);
         } else {
             if (fromService) {
                 VoiceRecognitionService.sendCancelled();

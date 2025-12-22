@@ -92,18 +92,48 @@ public class VoiceTextInjectionService extends AccessibilityService {
      * Returns true if injection successful, false if fell back to clipboard
      */
     public static boolean injectText(Context context, String text) {
-        Log.d(TAG, "injectText called: " + text);
+        Log.d(TAG, "injectText called with text length: " + (text != null ? text.length() : 0));
 
-        // Try accessibility injection first
-        if (instance != null && isServiceEnabled(context)) {
+        if (text == null || text.isEmpty()) {
+            Log.w(TAG, "Empty text, nothing to inject");
+            return false;
+        }
+
+        // Check if service is available
+        if (instance == null) {
+            Log.w(TAG, "VoiceTextInjectionService instance is null - service not connected");
+            copyToClipboard(context, text);
+            return false;
+        }
+
+        if (!isServiceEnabled(context)) {
+            Log.w(TAG, "Accessibility service is not enabled in settings");
+            copyToClipboard(context, text);
+            return false;
+        }
+
+        // Try accessibility injection with retries
+        int maxRetries = 3;
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            Log.d(TAG, "Injection attempt " + attempt + "/" + maxRetries);
+            
             if (instance.injectViaAccessibility(text)) {
-                Log.d(TAG, "Text injected via accessibility");
+                Log.d(TAG, "Text injected via accessibility on attempt " + attempt);
                 return true;
+            }
+            
+            // Brief delay before retry
+            if (attempt < maxRetries) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
 
-        // Fallback to clipboard
-        Log.d(TAG, "Falling back to clipboard");
+        // Fallback to clipboard after all retries failed
+        Log.d(TAG, "All injection attempts failed, falling back to clipboard");
         copyToClipboard(context, text);
         return false;
     }
