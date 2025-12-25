@@ -374,17 +374,73 @@ impl eframe::App for TranscribeApp {
                                 }
                             });
                         
+                        ui.add_space(16.0);
+                        
+                        // Accessibility Card - Text Injection Service
+                        egui::Frame::none()
+                            .fill(egui::Color32::WHITE)
+                            .rounding(12.0)
+                            .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(229, 231, 235)))
+                            .inner_margin(20.0)
+                            .show(ui, |ui| {
+                                ui.set_width(320.0);
+                                ui.horizontal(|ui| {
+                                    // Icon box (gray rounded square)
+                                    egui::Frame::none()
+                                        .fill(egui::Color32::from_rgb(75, 85, 99))
+                                        .rounding(12.0)
+                                        .inner_margin(12.0)
+                                        .show(ui, |ui| {
+                                            ui.label(egui::RichText::new("✓")
+                                                .size(24.0)
+                                                .color(egui::Color32::WHITE));
+                                        });
+                                    
+                                    ui.add_space(16.0);
+                                    
+                                    // Text content
+                                    ui.vertical(|ui| {
+                                        ui.label(egui::RichText::new("Text Injection Service")
+                                            .size(17.0)
+                                            .strong()
+                                            .color(egui::Color32::from_rgb(36, 41, 47)));
+                                        ui.add_space(2.0);
+                                        ui.label(egui::RichText::new("Required for SwiftKey\nand other apps")
+                                            .size(13.0)
+                                            .color(egui::Color32::from_rgb(107, 114, 128)));
+                                    });
+                                });
+                                
+                                ui.add_space(16.0);
+                                
+                                // Full-width outline button
+                                #[cfg(target_os = "android")]
+                                if ui.add(egui::Button::new(
+                                    egui::RichText::new("Enable Accessibility")
+                                        .size(15.0)
+                                        .color(egui::Color32::from_rgb(55, 65, 81)))
+                                    .fill(egui::Color32::TRANSPARENT)
+                                    .stroke(egui::Stroke::new(1.5, egui::Color32::from_rgb(209, 213, 219)))
+                                    .min_size(egui::vec2(280.0, 44.0))
+                                    .rounding(10.0))
+                                    .clicked() {
+                                    let _ = open_accessibility_settings();
+                                }
+                            });
+                        
                         ui.add_space(48.0);
                         
-                        // Status at bottom - green dot with text
-                        ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new("●")
-                                .size(14.0)
-                                .color(egui::Color32::from_rgb(34, 197, 94)));
-                            ui.add_space(4.0);
-                            ui.label(egui::RichText::new(&self.status_msg)
-                                .size(16.0)
-                                .color(egui::Color32::from_rgb(34, 197, 94)));
+                        // Status at bottom - centered with green light
+                        ui.vertical_centered(|ui| {
+                            ui.horizontal(|ui| {
+                                ui.label(egui::RichText::new("●")
+                                    .size(16.0)
+                                    .color(egui::Color32::from_rgb(34, 197, 94)));
+                                ui.add_space(6.0);
+                                ui.label(egui::RichText::new("Ready")
+                                    .size(17.0)
+                                    .color(egui::Color32::from_rgb(34, 197, 94)));
+                            });
                         });
                     }
                 }
@@ -471,6 +527,62 @@ fn open_settings_activity() -> anyhow::Result<()> {
 }
 
 #[cfg(target_os = "android")]
+fn open_ime_settings() -> anyhow::Result<()> {
+    let ctx = ndk_context::android_context();
+    let vm = unsafe { jni::JavaVM::from_raw(ctx.vm().cast()) }?;
+    let mut env = vm.attach_current_thread()?;
+    let activity = unsafe { JObject::from_raw(ctx.context().cast()) };
+    
+    let intent_class = env.find_class("android/content/Intent")?;
+    let action = env.new_string("android.settings.INPUT_METHOD_SETTINGS")?;
+    let intent_obj = env.new_object(&intent_class, "(Ljava/lang/String;)V", &[(&action).into()])?;
+    
+    env.call_method(
+        &intent_obj, 
+        "addFlags", 
+        "(I)Landroid/content/Intent;", 
+        &[268435456.into()]
+    )?;
+
+    env.call_method(
+        &activity,
+        "startActivity",
+        "(Landroid/content/Intent;)V",
+        &[(&intent_obj).into()]
+    )?;
+    
+    Ok(())
+}
+
+#[cfg(target_os = "android")]
+fn open_accessibility_settings() -> anyhow::Result<()> {
+    let ctx = ndk_context::android_context();
+    let vm = unsafe { jni::JavaVM::from_raw(ctx.vm().cast()) }?;
+    let mut env = vm.attach_current_thread()?;
+    let activity = unsafe { JObject::from_raw(ctx.context().cast()) };
+    
+    let intent_class = env.find_class("android/content/Intent")?;
+    let action = env.new_string("android.settings.ACCESSIBILITY_SETTINGS")?;
+    let intent_obj = env.new_object(&intent_class, "(Ljava/lang/String;)V", &[(&action).into()])?;
+    
+    env.call_method(
+        &intent_obj, 
+        "addFlags", 
+        "(I)Landroid/content/Intent;", 
+        &[268435456.into()]
+    )?;
+
+    env.call_method(
+        &activity,
+        "startActivity",
+        "(Landroid/content/Intent;)V",
+        &[(&intent_obj).into()]
+    )?;
+    
+    Ok(())
+}
+
+#[cfg(target_os = "android")]
 fn check_permission(perm_name: &str) -> anyhow::Result<bool> {
     let ctx = ndk_context::android_context();
     let vm = unsafe { jni::JavaVM::from_raw(ctx.vm().cast()) }?;
@@ -507,31 +619,6 @@ fn request_permission(perm_name: &str) -> anyhow::Result<()> {
             (0i32).into()
         ]
     )?;
-    Ok(())
-}
-
-#[cfg(target_os = "android")]
-fn open_ime_settings() -> anyhow::Result<()> {
-    let ctx = ndk_context::android_context();
-    let vm = unsafe { jni::JavaVM::from_raw(ctx.vm().cast()) }?;
-    let mut env = vm.attach_current_thread()?;
-    let activity = unsafe { JObject::from_raw(ctx.context().cast()) };
-    
-    let intent_class = env.find_class("android/content/Intent")?;
-    let action_string = env.new_string("android.settings.INPUT_METHOD_SETTINGS")?;
-    let intent_obj = env.new_object(
-        &intent_class, 
-        "(Ljava/lang/String;)V", 
-        &[(&action_string).into()]
-    )?;
-    
-    env.call_method(
-        &activity,
-        "startActivity",
-        "(Landroid/content/Intent;)V",
-        &[(&intent_obj).into()]
-    )?;
-    
     Ok(())
 }
 

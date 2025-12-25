@@ -97,11 +97,19 @@ public class SettingsActivity extends Activity {
                 // RECORDING Section
                 root.addView(createSectionTitle("RECORDING"));
 
-                // Auto-Record toggle card (separate card)
-                root.addView(createSimpleToggleCard("Auto-Record", PREF_TIME_LIMIT, true));
-
-                // High Quality toggle card (separate card)
-                root.addView(createSimpleToggleCard("High Quality", PREF_AUTO_SILENCE, true));
+                LinearLayout recordingCard = createCard();
+                recordingCard.addView(createToggleTile(
+                                "30-Second Limit",
+                                "Auto-stop after 30 seconds",
+                                PREF_TIME_LIMIT,
+                                true));
+                recordingCard.addView(createDivider());
+                recordingCard.addView(createToggleTile(
+                                "Auto-stop on Silence",
+                                "Stop when silence detected (~2s)",
+                                PREF_AUTO_SILENCE,
+                                true));
+                root.addView(recordingCard);
 
                 // ACCESSIBILITY Section
                 root.addView(createSectionTitle("ACCESSIBILITY"));
@@ -160,16 +168,29 @@ public class SettingsActivity extends Activity {
                 root.addView(accessCard);
 
                 // AI Settings Section
-                root.addView(createSectionTitle("AI Post-Processing"));
+                root.addView(createSectionTitle("AI POST-PROCESSING"));
 
                 LinearLayout aiCard = createCard();
 
                 TextView aiHint = new TextView(this);
-                aiHint.setText("Enter Groq API key for Wispr Flow-style AI formatting. Get free key at console.groq.com");
+                aiHint.setText("Enter Groq API key for Wispr Flow-style AI formatting");
                 aiHint.setTextSize(13);
-                aiHint.setTextColor(0xFF656D76); // Muted gray
+                aiHint.setTextColor(0xFF656D76);
                 aiHint.setPadding(16, 16, 16, 8);
                 aiCard.addView(aiHint);
+
+                // One-click Get API Key button
+                TextView getKeyBtn = new TextView(this);
+                getKeyBtn.setText("→ Get Free API Key");
+                getKeyBtn.setTextSize(14);
+                getKeyBtn.setTextColor(0xFF2563EB); // Blue link color
+                getKeyBtn.setPadding(16, 8, 16, 16);
+                getKeyBtn.setOnClickListener(v -> {
+                        Intent intent = new Intent(Intent.ACTION_VIEW);
+                        intent.setData(android.net.Uri.parse("https://console.groq.com/keys"));
+                        startActivity(intent);
+                });
+                aiCard.addView(getKeyBtn);
 
                 EditText apiKeyInput = new EditText(this);
                 apiKeyInput.setHint("gsk_xxxxx... (leave empty for offline)");

@@ -62,13 +62,17 @@ Fully local voice dictation with advanced AI post-processing
 
 ---
 
-## 📱 Tested Keyboards
+## 📱 Compatible Keyboards
 
 | Keyboard | Status |
 |----------|--------|
-| [HeliBoard](https://github.com/Helium314/HeliBoard) | ✅ Working |
-| [SwiftKey](https://www.microsoft.com/swiftkey) | ✅ Working |
-| [GBoard](https://play.google.com/store/apps/details?id=com.google.android.inputmethod.latin) | ✅ Working |
+| [HeliBoard](https://github.com/Helium314/HeliBoard) | ✅ Tested & Working |
+| [SwiftKey](https://www.microsoft.com/swiftkey) | ✅ Tested & Working |
+| [OpenBoard](https://github.com/openboard-team/openboard) | 🔄 Should work |
+| [FlorisBoard](https://github.com/florisboard/florisboard) | 🔄 Should work |
+| [AnySoftKeyboard](https://github.com/AnySoftKeyboard/AnySoftKeyboard) | 🔄 Should work |
+
+> **Note:** Only HeliBoard and SwiftKey have been tested. Other open-source keyboards with voice input support should be compatible.
 
 ---
 
