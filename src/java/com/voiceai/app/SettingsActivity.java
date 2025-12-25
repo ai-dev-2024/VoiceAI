@@ -111,62 +111,6 @@ public class SettingsActivity extends Activity {
                                 true));
                 root.addView(recordingCard);
 
-                // ACCESSIBILITY Section
-                root.addView(createSectionTitle("ACCESSIBILITY"));
-
-                // Voice Feedback card - simple card matching mockup
-                boolean isAccessEnabled = VoiceTextInjectionService.isServiceEnabled(this);
-                LinearLayout accessCard = new LinearLayout(this);
-                accessCard.setOrientation(LinearLayout.HORIZONTAL);
-                accessCard.setGravity(Gravity.CENTER_VERTICAL);
-                accessCard.setPadding(20, 18, 20, 18);
-
-                GradientDrawable accessBg = new GradientDrawable();
-                accessBg.setColor(0xFFFFFFFF);
-                accessBg.setCornerRadius(12f);
-                accessBg.setStroke(1, 0xFFE5E7EB);
-                accessCard.setBackground(accessBg);
-
-                LinearLayout.LayoutParams accessParams = new LinearLayout.LayoutParams(
-                                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                accessParams.setMargins(0, 4, 0, 8);
-                accessCard.setLayoutParams(accessParams);
-
-                TextView accessTitle = new TextView(this);
-                accessTitle.setText("Voice Feedback");
-                accessTitle.setTextSize(16);
-                accessTitle.setTextColor(0xFF24292F);
-                LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(0,
-                                LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-                accessTitle.setLayoutParams(titleParams);
-                accessCard.addView(accessTitle);
-
-                // Status indicator - green dot + Enabled
-                LinearLayout statusRow = new LinearLayout(this);
-                statusRow.setOrientation(LinearLayout.HORIZONTAL);
-                statusRow.setGravity(Gravity.CENTER_VERTICAL);
-
-                TextView dot = new TextView(this);
-                dot.setText("●");
-                dot.setTextSize(10);
-                dot.setTextColor(isAccessEnabled ? 0xFF22C55E : 0xFFEA580C);
-                dot.setPadding(0, 0, 6, 0);
-                statusRow.addView(dot);
-
-                TextView statusText = new TextView(this);
-                statusText.setText(isAccessEnabled ? "Enabled" : "Disabled");
-                statusText.setTextSize(14);
-                statusText.setTextColor(isAccessEnabled ? 0xFF22C55E : 0xFFEA580C);
-                statusRow.addView(statusText);
-
-                accessCard.addView(statusRow);
-
-                accessCard.setOnClickListener(v -> {
-                        Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-                        startActivity(intent);
-                });
-                root.addView(accessCard);
-
                 // AI Settings Section
                 root.addView(createSectionTitle("AI POST-PROCESSING"));
 
@@ -216,6 +160,41 @@ public class SettingsActivity extends Activity {
                 });
                 aiCard.addView(apiKeyInput);
                 root.addView(aiCard);
+
+                // Offline LLM Section
+                root.addView(createSectionTitle("OFFLINE PROCESSING"));
+
+                LinearLayout offlineCard = createCard();
+
+                // Toggle for offline processing
+                offlineCard.addView(createToggleTile(
+                                "Use Offline LLM",
+                                "Qwen3 0.6B model for offline post-processing",
+                                "offline_llm_enabled",
+                                false));
+                offlineCard.addView(createDivider());
+
+                // Model info and download
+                TextView modelInfo = new TextView(this);
+                modelInfo.setText("Download ~400MB model for offline AI formatting. Works without internet.");
+                modelInfo.setTextSize(13);
+                modelInfo.setTextColor(0xFF656D76);
+                modelInfo.setPadding(16, 16, 16, 8);
+                offlineCard.addView(modelInfo);
+
+                // Download button
+                TextView downloadBtn = new TextView(this);
+                downloadBtn.setText("↓ Download Offline Model (~400MB)");
+                downloadBtn.setTextSize(14);
+                downloadBtn.setTextColor(0xFF2563EB);
+                downloadBtn.setPadding(16, 12, 16, 16);
+                downloadBtn.setOnClickListener(v -> {
+                        android.widget.Toast.makeText(this, "Model download coming soon!",
+                                        android.widget.Toast.LENGTH_SHORT).show();
+                });
+                offlineCard.addView(downloadBtn);
+
+                root.addView(offlineCard);
 
                 // Personal Dictionary Section
                 root.addView(createSectionTitle("Personal Dictionary"));

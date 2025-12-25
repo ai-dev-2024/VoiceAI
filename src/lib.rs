@@ -376,7 +376,7 @@ impl eframe::App for TranscribeApp {
                         
                         ui.add_space(16.0);
                         
-                        // Accessibility Card - Text Injection Service
+                        // Accessibility Card - Text Injection Service with status
                         egui::Frame::none()
                             .fill(egui::Color32::WHITE)
                             .rounding(12.0)
@@ -385,9 +385,15 @@ impl eframe::App for TranscribeApp {
                             .show(ui, |ui| {
                                 ui.set_width(320.0);
                                 ui.horizontal(|ui| {
-                                    // Icon box (gray rounded square)
+                                    // Icon box - green if enabled, gray if not
+                                    let is_enabled = true; // TODO: check actual status via JNI
+                                    let icon_color = if is_enabled {
+                                        egui::Color32::from_rgb(34, 197, 94) // Green
+                                    } else {
+                                        egui::Color32::from_rgb(239, 68, 68) // Red
+                                    };
                                     egui::Frame::none()
-                                        .fill(egui::Color32::from_rgb(75, 85, 99))
+                                        .fill(icon_color)
                                         .rounding(12.0)
                                         .inner_margin(12.0)
                                         .show(ui, |ui| {
@@ -398,14 +404,26 @@ impl eframe::App for TranscribeApp {
                                     
                                     ui.add_space(16.0);
                                     
-                                    // Text content
+                                    // Text content with status
                                     ui.vertical(|ui| {
-                                        ui.label(egui::RichText::new("Text Injection Service")
-                                            .size(17.0)
-                                            .strong()
-                                            .color(egui::Color32::from_rgb(36, 41, 47)));
+                                        ui.horizontal(|ui| {
+                                            ui.label(egui::RichText::new("Text Injection")
+                                                .size(17.0)
+                                                .strong()
+                                                .color(egui::Color32::from_rgb(36, 41, 47)));
+                                            ui.add_space(8.0);
+                                            // Status badge
+                                            let (status_text, status_color) = if is_enabled {
+                                                ("● Enabled", egui::Color32::from_rgb(34, 197, 94))
+                                            } else {
+                                                ("● Disabled", egui::Color32::from_rgb(239, 68, 68))
+                                            };
+                                            ui.label(egui::RichText::new(status_text)
+                                                .size(12.0)
+                                                .color(status_color));
+                                        });
                                         ui.add_space(2.0);
-                                        ui.label(egui::RichText::new("Required for SwiftKey\nand other apps")
+                                        ui.label(egui::RichText::new("Required for SwiftKey")
                                             .size(13.0)
                                             .color(egui::Color32::from_rgb(107, 114, 128)));
                                     });
@@ -413,10 +431,10 @@ impl eframe::App for TranscribeApp {
                                 
                                 ui.add_space(16.0);
                                 
-                                // Full-width outline button
+                                // Full-width button
                                 #[cfg(target_os = "android")]
                                 if ui.add(egui::Button::new(
-                                    egui::RichText::new("Enable Accessibility")
+                                    egui::RichText::new("Open Accessibility Settings")
                                         .size(15.0)
                                         .color(egui::Color32::from_rgb(55, 65, 81)))
                                     .fill(egui::Color32::TRANSPARENT)
