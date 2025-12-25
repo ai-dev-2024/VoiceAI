@@ -34,9 +34,11 @@ Fully local voice dictation with advanced AI post-processing
 
 | Feature | Description |
 |---------|-------------|
-| 🎨 **Clean UI Redesign** | Modern shadcn-style white interface |
+| 🎨 **Clean UI Redesign** | Modern shadcn-style white interface with Inter-style fonts |
+| 🧠 **Offline LLM Model** | Download Qwen3 0.6B for fully offline AI post-processing |
+| 🔗 **One-Click API Setup** | "Get Free API Key" button opens Groq console directly |
+| ✅ **Accessibility Status** | Green/red indicator shows Text Injection Service status |
 | 🚀 **Universal Text Injection** | Uses `InputConnection.commitText()` like real keyboards |
-| 📝 **Word Compatibility** | Smart clipboard fallback with toast notification |
 | ⌨️ **Organized Layout** | Card-based main screen with clear sections |
 | 📋 **Smart Clipboard** | "✓ Copied! Tap text field to paste" notification |
 
@@ -50,9 +52,9 @@ Fully local voice dictation with advanced AI post-processing
 |---------|-------------|
 | 🔒 **100% Offline** | No internet required — all processing on-device |
 | ⚡ **Fast Transcription** | NVIDIA Parakeet TDT 0.6B model (int8 quantized) |
+| 🧠 **Offline LLM** | Qwen3 0.6B for AI post-processing without internet |
 | 🎯 **Course Correction** | "No wait, I mean..." → Clean, corrected output |
 | 🗣️ **Voice Commands** | "Period", "comma", "new line", "delete that" |
-| 🧠 **Smart Post-Processing** | Punctuation, casing, numbers, fillers removed |
 | 📖 **Personal Dictionary** | FUTO-style custom word replacements |
 | ⏱️ **30-Second Timer** | Optional auto-stop after 30 seconds |
 | 🔇 **Silence Detection** | Auto-stop when you stop speaking |
@@ -204,6 +206,14 @@ adb install -r VoiceAI-v1.2.0.apk
 | [**Wispr Flow**](https://wispr.com/flow) | Course correction concept |
 | **NVIDIA NeMo** | Parakeet TDT speech model |
 | **Microsoft Phi-2** | On-device LLM (planned) |
+
+---
+
+## ☕ Support
+
+If you find VoiceAI useful, consider supporting the development:
+
+[![Ko-fi](https://img.shields.io/badge/Buy%20me%20a%20coffee-Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/mjyoke1111)
 
 ---
 

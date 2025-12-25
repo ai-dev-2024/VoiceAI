@@ -176,22 +176,78 @@ public class SettingsActivity extends Activity {
 
                 // Model info and download
                 TextView modelInfo = new TextView(this);
-                modelInfo.setText("Download ~400MB model for offline AI formatting. Works without internet.");
+                boolean modelExists = new java.io.File(getFilesDir(), "qwen3-0.6b-q4_k_m.gguf").exists();
+                modelInfo.setText(modelExists ? "✓ Offline model downloaded and ready to use."
+                                : "Download ~400MB model for offline AI formatting. Works without internet.");
                 modelInfo.setTextSize(13);
-                modelInfo.setTextColor(0xFF656D76);
+                modelInfo.setTextColor(modelExists ? 0xFF22C55E : 0xFF656D76);
                 modelInfo.setPadding(16, 16, 16, 8);
                 offlineCard.addView(modelInfo);
 
                 // Download button
                 TextView downloadBtn = new TextView(this);
-                downloadBtn.setText("↓ Download Offline Model (~400MB)");
+                downloadBtn.setText(modelExists ? "✓ Model Downloaded" : "↓ Download Offline Model (~400MB)");
                 downloadBtn.setTextSize(14);
-                downloadBtn.setTextColor(0xFF2563EB);
+                downloadBtn.setTextColor(modelExists ? 0xFF22C55E : 0xFF2563EB);
                 downloadBtn.setPadding(16, 12, 16, 16);
-                downloadBtn.setOnClickListener(v -> {
-                        android.widget.Toast.makeText(this, "Model download coming soon!",
-                                        android.widget.Toast.LENGTH_SHORT).show();
-                });
+
+                if (!modelExists) {
+                        downloadBtn.setOnClickListener(v -> {
+                                downloadBtn.setText("⏳ Downloading...");
+                                downloadBtn.setTextColor(0xFF656D76);
+
+                                // Download in background thread
+                                new Thread(() -> {
+                                        try {
+                                                java.net.URL url = new java.net.URL(
+                                                                "https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/resolve/main/qwen3-0.6b-q4_k_m.gguf");
+                                                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url
+                                                                .openConnection();
+                                                conn.setRequestProperty("User-Agent", "VoiceAI/1.2.0");
+
+                                                java.io.File outputFile = new java.io.File(getFilesDir(),
+                                                                "qwen3-0.6b-q4_k_m.gguf");
+                                                java.io.InputStream in = conn.getInputStream();
+                                                java.io.FileOutputStream out = new java.io.FileOutputStream(outputFile);
+
+                                                byte[] buffer = new byte[8192];
+                                                int bytesRead;
+                                                long totalBytes = 0;
+                                                long fileSize = conn.getContentLength();
+
+                                                while ((bytesRead = in.read(buffer)) != -1) {
+                                                        out.write(buffer, 0, bytesRead);
+                                                        totalBytes += bytesRead;
+                                                        final int progress = (int) ((totalBytes * 100) / fileSize);
+                                                        runOnUiThread(() -> downloadBtn
+                                                                        .setText("⏳ Downloading... " + progress + "%"));
+                                                }
+
+                                                out.close();
+                                                in.close();
+
+                                                runOnUiThread(() -> {
+                                                        downloadBtn.setText("✓ Model Downloaded");
+                                                        downloadBtn.setTextColor(0xFF22C55E);
+                                                        modelInfo.setText(
+                                                                        "✓ Offline model downloaded and ready to use.");
+                                                        modelInfo.setTextColor(0xFF22C55E);
+                                                        android.widget.Toast.makeText(SettingsActivity.this,
+                                                                        "Offline model ready!",
+                                                                        android.widget.Toast.LENGTH_SHORT).show();
+                                                });
+                                        } catch (Exception e) {
+                                                runOnUiThread(() -> {
+                                                        downloadBtn.setText("↓ Retry Download");
+                                                        downloadBtn.setTextColor(0xFFEA580C);
+                                                        android.widget.Toast.makeText(SettingsActivity.this,
+                                                                        "Download failed: " + e.getMessage(),
+                                                                        android.widget.Toast.LENGTH_LONG).show();
+                                                });
+                                        }
+                                }).start();
+                        });
+                }
                 offlineCard.addView(downloadBtn);
 
                 root.addView(offlineCard);
@@ -270,6 +326,37 @@ public class SettingsActivity extends Activity {
                 statusTile.addView(statusValue);
 
                 aboutCard.addView(statusTile);
+                aboutCard.addView(createDivider());
+
+                // Support link - embedded permanently
+                LinearLayout supportTile = new LinearLayout(this);
+                supportTile.setOrientation(LinearLayout.HORIZONTAL);
+                supportTile.setGravity(Gravity.CENTER_VERTICAL);
+                supportTile.setPadding(16, 14, 16, 14);
+                supportTile.setClickable(true);
+                supportTile.setFocusable(true);
+
+                TextView supportLabel = new TextView(this);
+                supportLabel.setText("☕ Support the Developer");
+                supportLabel.setTextSize(15);
+                supportLabel.setTextColor(0xFF2563EB);
+                LinearLayout.LayoutParams supportLabelParams = new LinearLayout.LayoutParams(0,
+                                LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+                supportLabel.setLayoutParams(supportLabelParams);
+                supportTile.addView(supportLabel);
+
+                TextView supportArrow = new TextView(this);
+                supportArrow.setText("→");
+                supportArrow.setTextSize(16);
+                supportArrow.setTextColor(0xFF2563EB);
+                supportTile.addView(supportArrow);
+
+                supportTile.setOnClickListener(v -> {
+                        Intent intent = new Intent(Intent.ACTION_VIEW);
+                        intent.setData(android.net.Uri.parse("https://ko-fi.com/mjyoke1111"));
+                        startActivity(intent);
+                });
+                aboutCard.addView(supportTile);
                 root.addView(aboutCard);
 
                 scroll.addView(root);

@@ -448,15 +448,16 @@ impl eframe::App for TranscribeApp {
                         
                         ui.add_space(48.0);
                         
-                        // Status at bottom - centered with green light
-                        ui.vertical_centered(|ui| {
+                        // Status at bottom - properly centered
+                        ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
                             ui.horizontal(|ui| {
                                 ui.label(egui::RichText::new("●")
-                                    .size(16.0)
+                                    .size(18.0)
                                     .color(egui::Color32::from_rgb(34, 197, 94)));
-                                ui.add_space(6.0);
+                                ui.add_space(8.0);
                                 ui.label(egui::RichText::new("Ready")
-                                    .size(17.0)
+                                    .size(18.0)
+                                    .strong()
                                     .color(egui::Color32::from_rgb(34, 197, 94)));
                             });
                         });
