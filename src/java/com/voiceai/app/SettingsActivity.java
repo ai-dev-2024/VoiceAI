@@ -176,7 +176,7 @@ public class SettingsActivity extends Activity {
 
                 // Model info and download
                 TextView modelInfo = new TextView(this);
-                boolean modelExists = new java.io.File(getFilesDir(), "qwen3-0.6b-q4_k_m.gguf").exists();
+                boolean modelExists = new java.io.File(getFilesDir(), "Qwen3-0.6B-UD-Q4_K_XL.gguf").exists();
                 modelInfo.setText(modelExists ? "✓ Offline model downloaded and ready to use."
                                 : "Download ~400MB model for offline AI formatting. Works without internet.");
                 modelInfo.setTextSize(13);
@@ -200,13 +200,13 @@ public class SettingsActivity extends Activity {
                                 new Thread(() -> {
                                         try {
                                                 java.net.URL url = new java.net.URL(
-                                                                "https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/resolve/main/qwen3-0.6b-q4_k_m.gguf");
+                                                                "https://huggingface.co/unsloth/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-UD-Q4_K_XL.gguf");
                                                 java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url
                                                                 .openConnection();
-                                                conn.setRequestProperty("User-Agent", "VoiceAI/1.2.0");
+                                                conn.setRequestProperty("User-Agent", "VoiceAI/1.2.1");
 
                                                 java.io.File outputFile = new java.io.File(getFilesDir(),
-                                                                "qwen3-0.6b-q4_k_m.gguf");
+                                                                "Qwen3-0.6B-UD-Q4_K_XL.gguf");
                                                 java.io.InputStream in = conn.getInputStream();
                                                 java.io.FileOutputStream out = new java.io.FileOutputStream(outputFile);
 

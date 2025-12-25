@@ -15,6 +15,9 @@ use jni::JNIEnv;
 #[cfg(target_os = "android")]
 use jni::objects::{JClass, JObject};
 
+// Note: Local LLM module removed - llama-cpp-2 doesn't cross-compile for Android
+// The enhanced rule-based processing in LocalLLMProcessor.java is used instead
+
 #[cfg(target_os = "android")]
 #[no_mangle]
 fn android_main(app: AndroidApp) {

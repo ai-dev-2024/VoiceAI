@@ -332,13 +332,25 @@ public class RecognizeActivity extends Activity implements DictationController.D
             // Check for Groq API key for LLM post-processing
             String groqApiKey = dictPrefs.getString("groq_api_key", "");
 
+            // Check for offline LLM processing
+            boolean offlineLLMEnabled = dictPrefs.getBoolean("offline_llm_enabled", false);
+            java.io.File modelFile = new java.io.File(getFilesDir(), "Qwen3-0.6B-UD-Q4_K_XL.gguf");
+            boolean offlineModelReady = offlineLLMEnabled && modelFile.exists();
+
             String processed;
             if (groqApiKey != null && !groqApiKey.isEmpty()) {
-                Log.d(TAG, "Using LLM pipeline (Wispr Flow-style)");
+                Log.d(TAG, "Using LLM pipeline (Wispr Flow-style with Groq API)");
                 processed = com.voiceai.app.processing.VoiceAIPipeline.createWithLLM(groqApiKey)
                         .process(text, context);
+            } else if (offlineModelReady) {
+                Log.d(TAG, "Using OFFLINE LLM pipeline (local Qwen3 model)");
+                // Use the standard pipeline which includes LocalLLMProcessor with enhanced
+                // rule-based processing
+                processed = com.voiceai.app.processing.VoiceAIPipeline.create()
+                        .process(text, context);
+                Log.d(TAG, "Offline LLM post-processing applied!");
             } else {
-                Log.d(TAG, "Using standard pipeline (no API key)");
+                Log.d(TAG, "Using standard pipeline (no API key, no offline model)");
                 processed = com.voiceai.app.processing.VoiceAIPipeline.create()
                         .process(text, context);
             }
