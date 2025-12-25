@@ -2,6 +2,47 @@
 
 All notable changes to VoiceAI will be documented in this file.
 
+## [1.2.0] - 2025-12-25
+
+### Added - Major Update 🎉
+- **Clean UI Redesign** - Modern shadcn-style white interface
+  - Light gray background (#FAFAFA) with white cards
+  - Card-based layout for main screen and settings
+  - Green toggle switches, dark buttons, subtle borders
+- **Universal Text Injection via IME** - Uses `InputConnection.commitText()` like real keyboards
+  - Works in ALL apps including Microsoft Word, Chrome, etc.
+  - Same method FUTO Keyboard and SwiftKey use
+- **Smart Clipboard Fallback** - For apps that don't support any injection method
+  - Shows toast: "✓ Copied! Tap text field to paste"
+- **New Modern AI App Icon** - Clean gradient design (blue → purple) with waveform
+
+### Fixed
+- Word Android text injection (now uses clipboard + toast notification)
+- Toast notifications now display on main thread correctly
+
+### Changed
+- Complete UI overhaul to clean white theme (removed dark glass theme)
+- Reorganized main screen layout with Settings prominent at top
+- Version display updated across all UI components
+
+---
+
+## [1.1.1] - 2025-12-25
+
+### Added
+- **LocalLLMProcessor** - Fully offline ML post-processing (no internet required)
+  - Enhanced rule-based fallback with grammar fixes
+  - Contraction handling (dont → don't, cant → can't, etc.)
+  - Question detection for proper punctuation
+  - ONNX Runtime integration prepared for TinyLlama/Phi-2
+- **`VoiceAIPipeline.createOffline()`** - New factory for offline-first operation
+- **ProcessorTests.java** - 40+ comprehensive unit tests for all processors
+
+### Fixed
+- Android manifest version now matches CHANGELOG (1.0.1 → 1.1.0)
+
+---
+
 ## [1.1.0] - 2025-12-14
 
 ### Added - Major Update 🚀

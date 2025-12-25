@@ -412,7 +412,15 @@ impl ParakeetModel {
             .filter_map(|&id| {
                 let idx = id as usize;
                 if idx < self.vocab.len() {
-                    Some(self.vocab[idx].clone())
+                    let token = &self.vocab[idx];
+                    // Filter: only keep tokens that are ASCII (English characters)
+                    // This blocks Cyrillic, Chinese, Arabic, etc. from multilingual models
+                    if token.chars().all(|c| c.is_ascii() || c == '\u{2581}') {
+                        Some(token.clone())
+                    } else {
+                        log::trace!("Skipping non-ASCII token: {:?}", token);
+                        None // Skip non-ASCII tokens
+                    }
                 } else {
                     None
                 }

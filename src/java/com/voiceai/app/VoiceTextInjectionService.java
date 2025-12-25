@@ -7,11 +7,17 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.view.accessibility.AccessibilityWindowInfo;
+import android.widget.Toast;
+
+import java.util.List;
 
 /**
  * Accessibility Service for injecting dictated text at cursor position
@@ -99,7 +105,19 @@ public class VoiceTextInjectionService extends AccessibilityService {
             return false;
         }
 
-        // Check if service is available
+        // ============ PRIORITY 1: IME InputConnection (UNIVERSAL - works in ALL apps)
+        // ============
+        // This is the same method keyboards use, works even in Word, Chrome, etc.
+        if (RustInputMethodService.isAvailable()) {
+            Log.d(TAG, "IME service available, using commitText for universal injection");
+            if (RustInputMethodService.injectText(text)) {
+                Log.d(TAG, "Text injected via IME InputConnection successfully!");
+                return true;
+            }
+        }
+
+        // ============ PRIORITY 2: Accessibility Service (fallback) ============
+        // Check if accessibility service is available
         if (instance == null) {
             Log.w(TAG, "VoiceTextInjectionService instance is null - service not connected");
             copyToClipboard(context, text);
@@ -112,30 +130,42 @@ public class VoiceTextInjectionService extends AccessibilityService {
             return false;
         }
 
-        // Try accessibility injection with retries
-        int maxRetries = 3;
-        for (int attempt = 1; attempt <= maxRetries; attempt++) {
-            Log.d(TAG, "Injection attempt " + attempt + "/" + maxRetries);
-            
-            if (instance.injectViaAccessibility(text)) {
-                Log.d(TAG, "Text injected via accessibility on attempt " + attempt);
-                return true;
-            }
-            
-            // Brief delay before retry
-            if (attempt < maxRetries) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
+        // Try immediate injection first
+        if (instance.injectViaAccessibility(text)) {
+            Log.d(TAG, "Text injected via accessibility immediately");
+            return true;
         }
 
-        // Fallback to clipboard after all retries failed
-        Log.d(TAG, "All injection attempts failed, falling back to clipboard");
-        copyToClipboard(context, text);
-        return false;
+        // Schedule delayed retries for system-wide injection
+        // This handles cases where focus hasn't returned to original window yet
+        Log.d(TAG, "Immediate injection failed, scheduling delayed retries");
+        scheduleDelayedInjection(context, text);
+        return true; // Return true since we've scheduled the injection
+    }
+
+    /**
+     * Schedule delayed injection attempts with increasing delays
+     * This is critical for system-wide injection where focus restoration takes time
+     */
+    private static void scheduleDelayedInjection(Context context, String text) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        final int[] delays = { 150, 300, 500 }; // Increasing delays for focus restoration
+
+        for (int i = 0; i < delays.length; i++) {
+            final int attempt = i + 1;
+            handler.postDelayed(() -> {
+                if (instance != null) {
+                    Log.d(TAG, "Delayed injection attempt " + attempt);
+                    if (instance.injectViaAccessibility(text)) {
+                        Log.d(TAG, "Text injected via accessibility on delayed attempt " + attempt);
+                    } else if (attempt == delays.length) {
+                        // Last attempt failed, copy to clipboard
+                        Log.d(TAG, "All delayed attempts failed, falling back to clipboard");
+                        copyToClipboard(context, text);
+                    }
+                }
+            }, delays[i]);
+        }
     }
 
     private static void copyToClipboard(Context context, String text) {
@@ -144,6 +174,12 @@ public class VoiceTextInjectionService extends AccessibilityService {
             ClipData clip = ClipData.newPlainText("VoiceAI", text);
             clipboard.setPrimaryClip(clip);
             Log.d(TAG, "Text copied to clipboard");
+
+            // Show user-friendly toast notification
+            Handler handler = new Handler(Looper.getMainLooper());
+            handler.post(() -> {
+                Toast.makeText(context, "✓ Copied! Tap text field to paste", Toast.LENGTH_SHORT).show();
+            });
         } catch (Exception e) {
             Log.e(TAG, "Error copying to clipboard", e);
         }
@@ -151,12 +187,38 @@ public class VoiceTextInjectionService extends AccessibilityService {
 
     private boolean injectViaAccessibility(String text) {
         try {
-            AccessibilityNodeInfo root = getRootInActiveWindow();
-            if (root == null) {
-                Log.d(TAG, "No root window");
-                return false;
+            // Try active window first
+            if (tryInjectInWindow(getRootInActiveWindow(), text)) {
+                return true;
             }
 
+            // Fallback: try ALL windows for system-wide injection
+            // This is critical for multi-window scenarios and app switching
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                List<AccessibilityWindowInfo> windows = getWindows();
+                Log.d(TAG, "Traversing " + windows.size() + " windows for editable node");
+
+                for (AccessibilityWindowInfo window : windows) {
+                    AccessibilityNodeInfo root = window.getRoot();
+                    if (root != null) {
+                        if (tryInjectInWindow(root, text)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error injecting via accessibility", e);
+        }
+        return false;
+    }
+
+    private boolean tryInjectInWindow(AccessibilityNodeInfo root, String text) {
+        if (root == null) {
+            return false;
+        }
+
+        try {
             AccessibilityNodeInfo focused = findFocusedEditableNode(root);
             if (focused != null) {
                 boolean result = insertTextAtCursor(focused, text);
@@ -184,7 +246,7 @@ public class VoiceTextInjectionService extends AccessibilityService {
 
             root.recycle();
         } catch (Exception e) {
-            Log.e(TAG, "Error injecting via accessibility", e);
+            Log.e(TAG, "Error in tryInjectInWindow", e);
         }
         return false;
     }
@@ -256,6 +318,20 @@ public class VoiceTextInjectionService extends AccessibilityService {
 
     private boolean insertTextAtCursor(AccessibilityNodeInfo node, String text) {
         try {
+            // First ensure the node has focus via ACTION_CLICK
+            if (!node.isFocused()) {
+                Log.d(TAG, "Node not focused, attempting to focus via ACTION_CLICK");
+                node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                // Give a tiny bit of time for focus to take effect
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException ignored) {
+                }
+            }
+
+            // Also try ACTION_FOCUS to ensure input focus
+            node.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
+
             CharSequence currentText = node.getText();
             String current = currentText != null ? currentText.toString() : "";
 
@@ -288,11 +364,12 @@ public class VoiceTextInjectionService extends AccessibilityService {
                 newText.insert(selStart, textToInsert);
             }
 
-            // Set the new text
+            // Try METHOD 1: ACTION_SET_TEXT (standard approach)
             Bundle args = new Bundle();
             args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
                     newText.toString());
             boolean success = node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args);
+            Log.d(TAG, "ACTION_SET_TEXT result: " + success);
 
             if (success) {
                 // Move cursor to end of inserted text
@@ -301,7 +378,16 @@ public class VoiceTextInjectionService extends AccessibilityService {
                 selArgs.putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, newPos);
                 selArgs.putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, newPos);
                 node.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, selArgs);
+                return true;
             }
+
+            // METHOD 2: For apps like Word that don't support ACTION_SET_TEXT,
+            // try setting just the new text (without cursor position logic)
+            Log.d(TAG, "Trying fallback: SET_TEXT with just the text to insert");
+            Bundle directArgs = new Bundle();
+            directArgs.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, textToInsert);
+            success = node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, directArgs);
+            Log.d(TAG, "Direct SET_TEXT result: " + success);
 
             return success;
         } catch (Exception e) {

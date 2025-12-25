@@ -24,7 +24,7 @@ import android.view.View;
  */
 public class SettingsActivity extends Activity {
 
-        public static final String APP_VERSION = "1.1.0";
+        public static final String APP_VERSION = "1.2.0";
 
         public static final String PREFS_NAME = "VoiceAIPrefs";
         public static final String PREF_TIME_LIMIT = "transcription_time_limit";
@@ -43,56 +43,49 @@ public class SettingsActivity extends Activity {
 
         private void createUI() {
                 ScrollView scroll = new ScrollView(this);
-                scroll.setBackgroundColor(0xFFF5F5F7); // Light gray like iOS
+                // Clean white background like shadcn/GitHub
+                scroll.setBackgroundColor(0xFFFAFAFA); // Very light gray (GitHub bg)
 
                 LinearLayout root = new LinearLayout(this);
                 root.setOrientation(LinearLayout.VERTICAL);
-                root.setPadding(32, 48, 32, 48);
+                root.setPadding(24, 40, 24, 40);
 
-                // Header with back button and app icon
+                // Header with back button and title
                 LinearLayout header = new LinearLayout(this);
                 header.setOrientation(LinearLayout.HORIZONTAL);
                 header.setGravity(Gravity.CENTER_VERTICAL);
-                header.setPadding(0, 0, 0, 24);
+                header.setPadding(0, 0, 0, 20);
 
                 TextView backBtn = new TextView(this);
                 backBtn.setText("←");
-                backBtn.setTextSize(24);
-                backBtn.setTextColor(0xFF007AFF); // iOS blue
+                backBtn.setTextSize(22);
+                backBtn.setTextColor(0xFF24292F); // GitHub dark text
                 backBtn.setPadding(0, 0, 16, 0);
                 backBtn.setOnClickListener(v -> finish());
                 header.addView(backBtn);
 
-                // Add app icon
-                TextView icon = new TextView(this);
-                icon.setText("🎤");
-                icon.setTextSize(28);
-                icon.setPadding(0, 0, 12, 0);
-                header.addView(icon);
-
                 TextView title = new TextView(this);
-                title.setText("VoiceAI Settings");
-                title.setTextSize(28);
-                title.setTextColor(0xFF1C1C1E);
-                title.setTypeface(null, android.graphics.Typeface.BOLD);
+                title.setText("Settings");
+                title.setTextSize(24);
+                title.setTextColor(0xFF24292F); // Dark text
+                title.setTypeface(
+                                android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD));
+                LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(
+                                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+                title.setLayoutParams(titleParams);
                 header.addView(title);
 
-                // Add version badge
+                // Simple version badge
                 TextView versionBadge = new TextView(this);
                 versionBadge.setText("v" + APP_VERSION);
                 versionBadge.setTextSize(12);
-                versionBadge.setTextColor(Color.WHITE);
-                versionBadge.setPadding(16, 6, 16, 6);
+                versionBadge.setTextColor(0xFF656D76); // Muted gray
+                versionBadge.setPadding(12, 4, 12, 4);
                 GradientDrawable badgeBg = new GradientDrawable();
-                badgeBg.setColor(0xFF007AFF); // Blue background
+                badgeBg.setColor(0xFFEFF1F3); // Light gray background
                 badgeBg.setCornerRadius(12f);
+                badgeBg.setStroke(1, 0xFFD1D9E0); // Subtle border
                 versionBadge.setBackground(badgeBg);
-                LinearLayout.LayoutParams badgeParams = new LinearLayout.LayoutParams(
-                                LinearLayout.LayoutParams.WRAP_CONTENT,
-                                LinearLayout.LayoutParams.WRAP_CONTENT);
-                badgeParams.setMargins(12, 0, 0, 0);
-                badgeParams.gravity = Gravity.CENTER_VERTICAL;
-                versionBadge.setLayoutParams(badgeParams);
                 header.addView(versionBadge);
 
                 root.addView(header);
@@ -161,22 +154,22 @@ public class SettingsActivity extends Activity {
 
                 TextView accessTitle = new TextView(this);
                 accessTitle.setText("Text Injection Service");
-                accessTitle.setTextSize(16);
-                accessTitle.setTextColor(0xFF1C1C1E);
+                accessTitle.setTextSize(15);
+                accessTitle.setTextColor(0xFF24292F); // Dark text
                 accessTextLayout.addView(accessTitle);
 
                 TextView accessSubtitle = new TextView(this);
                 accessSubtitle.setText(isAccessEnabled ? "Enabled - text will be inserted directly"
                                 : "Required for SwiftKey and other apps");
                 accessSubtitle.setTextSize(13);
-                accessSubtitle.setTextColor(isAccessEnabled ? 0xFF34C759 : 0xFFFF9500);
+                accessSubtitle.setTextColor(isAccessEnabled ? 0xFF22C55E : 0xFFEA580C); // Green or orange
                 accessTextLayout.addView(accessSubtitle);
                 accessTile.addView(accessTextLayout);
 
                 TextView accessBtn = new TextView(this);
-                accessBtn.setText(isAccessEnabled ? "Enabled" : "Enable →");
+                accessBtn.setText(isAccessEnabled ? "✓ Enabled" : "Enable →");
                 accessBtn.setTextSize(14);
-                accessBtn.setTextColor(isAccessEnabled ? 0xFF34C759 : 0xFF007AFF);
+                accessBtn.setTextColor(isAccessEnabled ? 0xFF22C55E : 0xFF2563EB); // Green or blue
                 accessTile.addView(accessBtn);
 
                 accessTile.setOnClickListener(v -> {
@@ -194,14 +187,14 @@ public class SettingsActivity extends Activity {
                 TextView aiHint = new TextView(this);
                 aiHint.setText("Enter Groq API key for Wispr Flow-style AI formatting. Get free key at console.groq.com");
                 aiHint.setTextSize(13);
-                aiHint.setTextColor(0xFF8E8E93);
+                aiHint.setTextColor(0xFF656D76); // Muted gray
                 aiHint.setPadding(16, 16, 16, 8);
                 aiCard.addView(aiHint);
 
                 EditText apiKeyInput = new EditText(this);
                 apiKeyInput.setHint("gsk_xxxxx... (leave empty for offline)");
-                apiKeyInput.setTextColor(0xFF1C1C1E);
-                apiKeyInput.setHintTextColor(0xFFC7C7CC);
+                apiKeyInput.setTextColor(0xFF24292F); // Dark text
+                apiKeyInput.setHintTextColor(0xFFADB5BD); // Gray hint
                 apiKeyInput.setTextSize(14);
                 apiKeyInput.setPadding(16, 16, 16, 16);
                 apiKeyInput.setSingleLine(true);
@@ -232,14 +225,14 @@ public class SettingsActivity extends Activity {
                 dictHint.setText(
                                 "Add words separated by commas. These will be preserved exactly as typed during transcription.");
                 dictHint.setTextSize(13);
-                dictHint.setTextColor(0xFF8E8E93);
+                dictHint.setTextColor(0xFF656D76); // Muted gray
                 dictHint.setPadding(16, 16, 16, 8);
                 dictCard.addView(dictHint);
 
                 dictInput = new EditText(this);
                 dictInput.setHint("Groq, ChatGPT, OpenAI...");
-                dictInput.setTextColor(0xFF1C1C1E);
-                dictInput.setHintTextColor(0xFFC7C7CC);
+                dictInput.setTextColor(0xFF24292F); // Dark text
+                dictInput.setHintTextColor(0xFFADB5BD); // Gray hint
                 dictInput.setTextSize(15);
                 dictInput.setPadding(16, 16, 16, 16);
                 dictInput.setMinLines(3);
@@ -283,17 +276,17 @@ public class SettingsActivity extends Activity {
 
                 TextView statusLabel = new TextView(this);
                 statusLabel.setText("Status");
-                statusLabel.setTextSize(16);
-                statusLabel.setTextColor(0xFF1C1C1E);
+                statusLabel.setTextSize(15);
+                statusLabel.setTextColor(0xFF24292F); // Dark text
                 LinearLayout.LayoutParams statusLabelParams = new LinearLayout.LayoutParams(0,
                                 LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
                 statusLabel.setLayoutParams(statusLabelParams);
                 statusTile.addView(statusLabel);
 
                 TextView statusValue = new TextView(this);
-                statusValue.setText("✅ Ready");
-                statusValue.setTextSize(16);
-                statusValue.setTextColor(0xFF34C759); // Green for ready status
+                statusValue.setText("✓ Ready");
+                statusValue.setTextSize(15);
+                statusValue.setTextColor(0xFF22C55E); // Green for ready
                 statusTile.addView(statusValue);
 
                 aboutCard.addView(statusTile);
@@ -306,10 +299,11 @@ public class SettingsActivity extends Activity {
         private TextView createSectionTitle(String text) {
                 TextView tv = new TextView(this);
                 tv.setText(text.toUpperCase());
-                tv.setTextSize(13);
-                tv.setTextColor(0xFF8E8E93);
-                tv.setPadding(16, 24, 16, 8);
+                tv.setTextSize(12);
+                tv.setTextColor(0xFF656D76); // Muted gray like shadcn
+                tv.setPadding(4, 20, 4, 8);
                 tv.setLetterSpacing(0.05f);
+                tv.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL));
                 return tv;
         }
 
@@ -318,10 +312,11 @@ public class SettingsActivity extends Activity {
                 card.setOrientation(LinearLayout.VERTICAL);
 
                 GradientDrawable bg = new GradientDrawable();
-                bg.setColor(Color.WHITE);
-                bg.setCornerRadius(16f);
+                bg.setColor(0xFFFFFFFF); // Pure white card
+                bg.setCornerRadius(12f);
+                bg.setStroke(1, 0xFFE5E7EB); // Light gray border
                 card.setBackground(bg);
-                card.setElevation(2f);
+                card.setElevation(1f); // Subtle shadow
 
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -346,15 +341,15 @@ public class SettingsActivity extends Activity {
 
                 TextView titleTv = new TextView(this);
                 titleTv.setText(title);
-                titleTv.setTextSize(17);
-                titleTv.setTextColor(0xFF1C1C1E);
-                titleTv.setTypeface(null, android.graphics.Typeface.BOLD);
+                titleTv.setTextSize(16);
+                titleTv.setTextColor(0xFF24292F); // Dark text for light theme
+                titleTv.setTypeface(null, android.graphics.Typeface.NORMAL);
                 textPart.addView(titleTv);
 
                 TextView subtitleTv = new TextView(this);
                 subtitleTv.setText(subtitle);
                 subtitleTv.setTextSize(13);
-                subtitleTv.setTextColor(0xFF8E8E93);
+                subtitleTv.setTextColor(0xFF656D76); // Muted gray
                 textPart.addView(subtitleTv);
 
                 tile.addView(textPart);
@@ -367,7 +362,7 @@ public class SettingsActivity extends Activity {
 
                 GradientDrawable trackBg = new GradientDrawable();
                 trackBg.setCornerRadius(25f);
-                trackBg.setColor(isOn[0] ? 0xFF34C759 : 0xFFE5E5EA); // Green when on, gray when off
+                trackBg.setColor(isOn[0] ? 0xFF22C55E : 0xFFE5E7EB); // Green when on, light gray when off
                 toggleContainer.setBackground(trackBg);
 
                 // Thumb (white circle)
@@ -392,7 +387,7 @@ public class SettingsActivity extends Activity {
 
                         // Update visual
                         ((GradientDrawable) toggleContainer.getBackground())
-                                        .setColor(isOn[0] ? 0xFF34C759 : 0xFFE5E5EA);
+                                        .setColor(isOn[0] ? 0xFF22C55E : 0xFFE5E7EB);
                         FrameLayout.LayoutParams newParams = new FrameLayout.LayoutParams(42, 42);
                         newParams.gravity = Gravity.CENTER_VERTICAL;
                         newParams.setMargins(isOn[0] ? 54 : 4, 4, 4, 4);
@@ -421,22 +416,22 @@ public class SettingsActivity extends Activity {
 
                 TextView titleTv = new TextView(this);
                 titleTv.setText(title);
-                titleTv.setTextSize(16);
-                titleTv.setTextColor(0xFF1C1C1E);
+                titleTv.setTextSize(15);
+                titleTv.setTextColor(0xFF24292F); // Dark text
                 textPart.addView(titleTv);
 
                 TextView subtitleTv = new TextView(this);
                 subtitleTv.setText(subtitle);
                 subtitleTv.setTextSize(13);
-                subtitleTv.setTextColor(0xFF8E8E93);
+                subtitleTv.setTextColor(0xFF656D76); // Muted gray
                 textPart.addView(subtitleTv);
 
                 tile.addView(textPart);
 
                 TextView arrow = new TextView(this);
                 arrow.setText("›");
-                arrow.setTextSize(20);
-                arrow.setTextColor(0xFFC7C7CC);
+                arrow.setTextSize(18);
+                arrow.setTextColor(0xFFD1D9E0); // Light gray arrow
                 tile.addView(arrow);
 
                 return tile;
@@ -450,8 +445,8 @@ public class SettingsActivity extends Activity {
 
                 TextView labelTv = new TextView(this);
                 labelTv.setText(label);
-                labelTv.setTextSize(16);
-                labelTv.setTextColor(0xFF1C1C1E);
+                labelTv.setTextSize(15);
+                labelTv.setTextColor(0xFF24292F); // Dark text
                 LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(0,
                                 LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
                 labelTv.setLayoutParams(labelParams);
@@ -459,8 +454,8 @@ public class SettingsActivity extends Activity {
 
                 TextView valueTv = new TextView(this);
                 valueTv.setText(value);
-                valueTv.setTextSize(16);
-                valueTv.setTextColor(0xFF8E8E93);
+                valueTv.setTextSize(15);
+                valueTv.setTextColor(0xFF656D76); // Muted gray
                 tile.addView(valueTv);
 
                 return tile;
@@ -472,7 +467,7 @@ public class SettingsActivity extends Activity {
                                 LinearLayout.LayoutParams.MATCH_PARENT, 1);
                 params.setMargins(16, 0, 0, 0);
                 divider.setLayoutParams(params);
-                divider.setBackgroundColor(0xFFE5E5EA);
+                divider.setBackgroundColor(0xFFE5E7EB); // Light gray divider
                 return divider;
         }
 

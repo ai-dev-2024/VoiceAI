@@ -156,7 +156,7 @@ impl eframe::App for TranscribeApp {
                     self.status_msg = format!("Error: {}", e);
                 },
                 UiUpdate::AssetsReady => {
-                    self.status_msg = "Assets Ready.".to_string();
+                    self.status_msg = "Ready".to_string();
                     if self.step == OnboardingStep::AssetExtraction {
                         self.step = OnboardingStep::Ready;
                     }
@@ -170,90 +170,186 @@ impl eframe::App for TranscribeApp {
             }
         }
 
-        egui::CentralPanel::default().show(ctx, |ui| {
-            if self.show_settings {
-                ui.vertical_centered(|ui| {
-                    ui.add_space(40.0);
-                    if ui.button(egui::RichText::new("⬅ Back").size(20.0)).clicked() {
-                        self.show_settings = false;
-                    }
-                    ui.add_space(20.0);
-                    ui.heading(egui::RichText::new("Settings").size(30.0));
-                    ui.add_space(20.0);
-                    
-                    ui.label(egui::RichText::new("Update Interval (Latency vs Accuracy):").size(18.0));
-                    if ui.add(egui::Slider::new(&mut self.update_interval_sec, 1.0..=5.0).text("seconds")).changed() {
-                        let samples = (self.update_interval_sec * 16000.0) as usize;
-                        if let Ok(mut cfg) = CONFIG.lock() {
-                            cfg.update_interval_samples = samples;
-                        }
-                        // Also update running state if active
-                        if let Ok(mut guard) = LIVE_STATE.lock() {
-                            if let Some(state) = guard.as_mut() {
-                                state.update_interval = samples;
-                            }
-                        }
-                    }
-                    ui.label(egui::RichText::new("⚠ Warning: Lower interval reduces latency but may decrease accuracy and increase battery usage.").size(14.0).color(egui::Color32::YELLOW));
-                });
-                return;
-            }
+        // Clean light background
+        let frame = egui::Frame::central_panel(&ctx.style())
+            .fill(egui::Color32::from_rgb(250, 250, 250));
 
+        egui::CentralPanel::default().frame(frame).show(ctx, |ui| {
             ui.vertical_centered(|ui| {
-                ui.add_space(60.0);
-                ui.heading(egui::RichText::new("Offline Voice Input").size(32.0));
-                ui.add_space(20.0);
+                ui.add_space(50.0);
+                
+                // App Title - Clean and minimal
+                ui.label(egui::RichText::new("VoiceAI")
+                    .size(36.0)
+                    .strong()
+                    .color(egui::Color32::from_rgb(36, 41, 47)));
+                
+                ui.add_space(8.0);
+                ui.label(egui::RichText::new("Offline Voice Dictation")
+                    .size(16.0)
+                    .color(egui::Color32::from_rgb(101, 109, 118)));
+                
+                ui.add_space(40.0);
                 
                 match self.step {
                     OnboardingStep::Permissions => {
-                        ui.label(egui::RichText::new("Welcome! To use this app, we need permission to record audio.").size(18.0));
-                        ui.add_space(20.0);
-                        if ui.add(egui::Button::new(egui::RichText::new("Grant Microphone Permission").size(20.0)).min_size(egui::vec2(200.0, 60.0))).clicked() {
-                            self.request_permissions();
-                        }
-                        ui.add_space(10.0);
-                        if ui.button("I have granted it (Check again)").clicked() {
-                             self.check_permissions();
-                        }
+                        // Permission Card
+                        egui::Frame::none()
+                            .fill(egui::Color32::WHITE)
+                            .rounding(12.0)
+                            .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(229, 231, 235)))
+                            .inner_margin(24.0)
+                            .show(ui, |ui| {
+                                ui.set_width(300.0);
+                                ui.vertical_centered(|ui| {
+                                    ui.label(egui::RichText::new("🎤")
+                                        .size(48.0));
+                                    ui.add_space(16.0);
+                                    ui.label(egui::RichText::new("Microphone Access Required")
+                                        .size(18.0)
+                                        .strong()
+                                        .color(egui::Color32::from_rgb(36, 41, 47)));
+                                    ui.add_space(8.0);
+                                    ui.label(egui::RichText::new("Grant permission to enable voice dictation")
+                                        .size(14.0)
+                                        .color(egui::Color32::from_rgb(101, 109, 118)));
+                                    ui.add_space(20.0);
+                                    
+                                    if ui.add(egui::Button::new(
+                                        egui::RichText::new("Grant Permission")
+                                            .size(16.0)
+                                            .color(egui::Color32::WHITE))
+                                        .fill(egui::Color32::from_rgb(34, 197, 94))
+                                        .min_size(egui::vec2(200.0, 44.0))
+                                        .rounding(8.0))
+                                        .clicked() {
+                                        self.request_permissions();
+                                    }
+                                    
+                                    ui.add_space(12.0);
+                                    if ui.add(egui::Button::new(
+                                        egui::RichText::new("Check Again")
+                                            .size(14.0)
+                                            .color(egui::Color32::from_rgb(101, 109, 118)))
+                                        .fill(egui::Color32::TRANSPARENT)
+                                        .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(209, 213, 219)))
+                                        .min_size(egui::vec2(140.0, 36.0))
+                                        .rounding(8.0))
+                                        .clicked() {
+                                        self.check_permissions();
+                                    }
+                                });
+                            });
                     }
                     OnboardingStep::ImeSetup => {
-                        ui.label("Permissions Granted!");
+                        ui.label(egui::RichText::new("✓ Permissions Granted")
+                            .size(18.0)
+                            .color(egui::Color32::from_rgb(34, 197, 94)));
                     }
                     OnboardingStep::AssetExtraction => {
-                        ui.spinner();
-                        ui.add_space(10.0);
-                        ui.label(&self.status_msg);
+                        // Loading Card
+                        egui::Frame::none()
+                            .fill(egui::Color32::WHITE)
+                            .rounding(12.0)
+                            .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(229, 231, 235)))
+                            .inner_margin(32.0)
+                            .show(ui, |ui| {
+                                ui.set_width(280.0);
+                                ui.vertical_centered(|ui| {
+                                    ui.spinner();
+                                    ui.add_space(16.0);
+                                    ui.label(egui::RichText::new("Loading Model...")
+                                        .size(16.0)
+                                        .color(egui::Color32::from_rgb(36, 41, 47)));
+                                    ui.add_space(8.0);
+                                    ui.label(egui::RichText::new(&self.status_msg)
+                                        .size(13.0)
+                                        .color(egui::Color32::from_rgb(101, 109, 118)));
+                                });
+                            });
                     }
                     OnboardingStep::Ready => {
-                        ui.add_space(10.0);
+                        // Main Action Card - Settings
+                        egui::Frame::none()
+                            .fill(egui::Color32::WHITE)
+                            .rounding(12.0)
+                            .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(229, 231, 235)))
+                            .inner_margin(24.0)
+                            .show(ui, |ui| {
+                                ui.set_width(300.0);
+                                ui.vertical_centered(|ui| {
+                                    ui.label(egui::RichText::new("⚙️")
+                                        .size(32.0));
+                                    ui.add_space(12.0);
+                                    ui.label(egui::RichText::new("Settings & Dictionary")
+                                        .size(18.0)
+                                        .strong()
+                                        .color(egui::Color32::from_rgb(36, 41, 47)));
+                                    ui.add_space(4.0);
+                                    ui.label(egui::RichText::new("Configure recording and add custom words")
+                                        .size(13.0)
+                                        .color(egui::Color32::from_rgb(101, 109, 118)));
+                                    ui.add_space(16.0);
+                                    
+                                    #[cfg(target_os = "android")]
+                                    if ui.add(egui::Button::new(
+                                        egui::RichText::new("Open Settings")
+                                            .size(15.0)
+                                            .color(egui::Color32::WHITE))
+                                        .fill(egui::Color32::from_rgb(36, 41, 47))
+                                        .min_size(egui::vec2(180.0, 42.0))
+                                        .rounding(8.0))
+                                        .clicked() {
+                                        let _ = open_settings_activity();
+                                    }
+                                });
+                            });
                         
-                        // 1. Keyboard Setup
-                        ui.label(egui::RichText::new("Keyboard Setup").size(24.0).strong());
-                        ui.label(egui::RichText::new("Setup the keyboard to input any text via voice on any text field.").size(16.0));
-                        ui.add_space(10.0);
+                        ui.add_space(16.0);
                         
-                        #[cfg(target_os = "android")]
-                        if ui.add(egui::Button::new(egui::RichText::new("Open Keyboard Settings").size(20.0)).min_size(egui::vec2(250.0, 50.0))).clicked() {
-                            let _ = open_ime_settings();
-                        }
-
-                        ui.add_space(30.0);
-                        ui.separator();
-                        ui.add_space(30.0);
-
-                        // Settings & Dictionary - Large prominent button
-                        ui.label(egui::RichText::new("⚙️ Settings & Personal Dictionary").size(24.0).strong());
-                        ui.label(egui::RichText::new("Configure recording options and add custom words.").size(16.0));
+                        // Keyboard Setup Card
+                        egui::Frame::none()
+                            .fill(egui::Color32::WHITE)
+                            .rounding(12.0)
+                            .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(229, 231, 235)))
+                            .inner_margin(24.0)
+                            .show(ui, |ui| {
+                                ui.set_width(300.0);
+                                ui.vertical_centered(|ui| {
+                                    ui.label(egui::RichText::new("⌨️")
+                                        .size(32.0));
+                                    ui.add_space(12.0);
+                                    ui.label(egui::RichText::new("Keyboard Setup")
+                                        .size(18.0)
+                                        .strong()
+                                        .color(egui::Color32::from_rgb(36, 41, 47)));
+                                    ui.add_space(4.0);
+                                    ui.label(egui::RichText::new("Enable VoiceAI as input method")
+                                        .size(13.0)
+                                        .color(egui::Color32::from_rgb(101, 109, 118)));
+                                    ui.add_space(16.0);
+                                    
+                                    #[cfg(target_os = "android")]
+                                    if ui.add(egui::Button::new(
+                                        egui::RichText::new("Keyboard Settings")
+                                            .size(15.0)
+                                            .color(egui::Color32::from_rgb(36, 41, 47)))
+                                        .fill(egui::Color32::TRANSPARENT)
+                                        .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(209, 213, 219)))
+                                        .min_size(egui::vec2(180.0, 42.0))
+                                        .rounding(8.0))
+                                        .clicked() {
+                                        let _ = open_ime_settings();
+                                    }
+                                });
+                            });
                         
-                        ui.add_space(20.0);
+                        ui.add_space(32.0);
                         
-                        #[cfg(target_os = "android")]
-                        if ui.add(egui::Button::new(egui::RichText::new("⚙ Open Settings").size(24.0)).min_size(egui::vec2(280.0, 80.0))).clicked() {
-                            let _ = open_settings_activity();
-                        }
-                        
-                        ui.add_space(20.0);
-                        ui.label(format!("Status: {}", self.status_msg));
+                        // Status at bottom
+                        ui.label(egui::RichText::new(format!("● {}", self.status_msg))
+                            .size(13.0)
+                            .color(egui::Color32::from_rgb(34, 197, 94)));
                     }
                 }
             });

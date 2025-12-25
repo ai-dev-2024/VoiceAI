@@ -78,6 +78,26 @@ public final class VoiceAIPipeline {
     }
 
     /**
+     * Create pipeline with fully OFFLINE ML post-processing
+     * Uses LocalLLMProcessor for on-device inference (no internet required)
+     * 
+     * This is the recommended pipeline for Android devices that need
+     * to work completely offline while still having ML-enhanced output.
+     */
+    public static ProcessingPipeline createOffline() {
+        return new ProcessingPipeline("VoiceAI+OfflineLLM")
+                .add(new CommandInterpreter())
+                .add(new CourseCorrector())
+                .add(new RepetitionCleaner())
+                .add(new PersonalDictionaryApplicator())
+                .add(new FillerRemover())
+                .add(new NumberNormalizer())
+                .add(new PunctuationRestorer())
+                .add(new CasingApplicator())
+                .add(new LocalLLMProcessor()); // Offline ML polish
+    }
+
+    /**
      * Create a minimal pipeline for fast processing
      * (Skip course correction and advanced formatting)
      */

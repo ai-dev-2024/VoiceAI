@@ -427,13 +427,9 @@ public class RecognizeActivity extends Activity implements DictationController.D
         Log.d(TAG, "returnResult: text=" + text + ", fromService=" + fromService);
 
         if (text != null && !text.isEmpty()) {
-            // FUTO Voice Pattern: Return text via Activity result (works with SwiftKey)
-            ArrayList<String> results = new ArrayList<>();
-            results.add(text);
-
-            Intent returnIntent = new Intent();
-            returnIntent.putStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS, results);
-            returnIntent.putExtra(RecognizerIntent.EXTRA_CONFIDENCE_SCORES, new float[] { 1.0f });
+            // Try accessibility injection FIRST (works reliably with SwiftKey)
+            boolean injected = VoiceTextInjectionService.injectText(this, text);
+            Log.d(TAG, "Accessibility injection result: " + injected);
 
             // For HeliBoard: also send via VoiceRecognitionService callback
             if (fromService) {
@@ -441,8 +437,22 @@ public class RecognizeActivity extends Activity implements DictationController.D
                 VoiceRecognitionService.sendResults(text);
             }
 
-            Log.d(TAG, "Setting RESULT_OK with EXTRA_RESULTS");
-            setResult(RESULT_OK, returnIntent);
+            if (injected) {
+                // Text was injected via accessibility, set CANCELED to avoid double-insert
+                Log.d(TAG, "Text injected via accessibility, setting RESULT_CANCELED");
+                setResult(RESULT_CANCELED);
+            } else {
+                // Fallback: Return text via Activity result (works with some keyboards)
+                ArrayList<String> results = new ArrayList<>();
+                results.add(text);
+
+                Intent returnIntent = new Intent();
+                returnIntent.putStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS, results);
+                returnIntent.putExtra(RecognizerIntent.EXTRA_CONFIDENCE_SCORES, new float[] { 1.0f });
+
+                Log.d(TAG, "Setting RESULT_OK with EXTRA_RESULTS (fallback)");
+                setResult(RESULT_OK, returnIntent);
+            }
         } else {
             if (fromService) {
                 VoiceRecognitionService.sendCancelled();

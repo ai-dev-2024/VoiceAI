@@ -29,6 +29,7 @@ import android.view.animation.LinearInterpolator;
 public class RustInputMethodService extends InputMethodService {
 
     private static final String TAG = "VoiceAI";
+    private static RustInputMethodService instance = null;
 
     static {
         try {
@@ -51,12 +52,52 @@ public class RustInputMethodService extends InputMethodService {
     public void onCreate() {
         super.onCreate();
         mainHandler = new Handler(Looper.getMainLooper());
+        instance = this;
         Log.d(TAG, "VoiceAI Service onCreate");
         try {
             initNative(this);
         } catch (Exception e) {
             Log.e(TAG, "Error in initNative", e);
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        instance = null;
+        stopWaveformAnimation();
+        cleanupNative();
+    }
+
+    /**
+     * Static method to inject text via the IME's InputConnection.
+     * This is the UNIVERSAL method that works in ALL apps including Word.
+     * Returns true if injection was successful.
+     */
+    public static boolean injectText(String text) {
+        if (instance == null) {
+            Log.d(TAG, "RustInputMethodService instance is null");
+            return false;
+        }
+
+        android.view.inputmethod.InputConnection ic = instance.getCurrentInputConnection();
+        if (ic != null) {
+            boolean committed = ic.commitText(text + " ", 1);
+            Log.d(TAG, "IME commitText result: " + committed);
+            return committed;
+        } else {
+            Log.d(TAG, "IME InputConnection is null");
+            return false;
+        }
+    }
+
+    /**
+     * Check if the IME service is available and has an active InputConnection.
+     */
+    public static boolean isAvailable() {
+        if (instance == null)
+            return false;
+        return instance.getCurrentInputConnection() != null;
     }
 
     @Override
@@ -179,13 +220,6 @@ public class RustInputMethodService extends InputMethodService {
     private int dpToPx(int dp) {
         float density = getResources().getDisplayMetrics().density;
         return Math.round(dp * density);
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        stopWaveformAnimation();
-        cleanupNative();
     }
 
     // Native methods

@@ -8,7 +8,7 @@
 
 Fully local voice dictation with advanced AI post-processing
 
-[![Release](https://img.shields.io/badge/Release-v1.1.0-brightgreen?style=for-the-badge)](../../releases/latest)
+[![Release](https://img.shields.io/badge/Release-v1.2.0-brightgreen?style=for-the-badge)](../../releases/latest)
 [![Built with Antigravity](https://img.shields.io/badge/Built%20with-Google%20Antigravity-4285F4?style=for-the-badge&logo=google)](https://developers.google.com/project-antigravity)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 [![Android](https://img.shields.io/badge/Android-min%20API%2026-3DDC84?style=for-the-badge&logo=android)](https://developer.android.com)
@@ -22,23 +22,23 @@ Fully local voice dictation with advanced AI post-processing
 <div align="center">
 <table>
 <tr>
-<td align="center"><img src="docs/images/dictation_ui.png" alt="Voice Dictation UI" width="300"/><br/><b>Dictation Overlay</b></td>
-<td align="center"><img src="docs/images/features_showcase.png" alt="Features" width="300"/><br/><b>Key Features</b></td>
+<td align="center"><img src="screenshots/main_screen.png" alt="Main Screen" width="280"/><br/><b>Main Screen</b></td>
+<td align="center"><img src="screenshots/settings_screen.png" alt="Settings" width="280"/><br/><b>Settings</b></td>
 </tr>
 </table>
 </div>
 
 ---
 
-## 🆕 What's New in v1.1.0
+## 🆕 What's New in v1.2.0
 
 | Feature | Description |
 |---------|-------------|
-| 🎯 **Course Correction** | "No wait" / "I mean" → Clean output (Wispr's killer feature!) |
-| 🗣️ **Voice Commands** | "Delete that", "new paragraph", "period", "comma" |
-| 📦 **Modular Pipeline** | 8 specialized processors with clean architecture |
-| 📳 **Haptic Feedback** | Subtle vibration on start/stop |
-| 🤖 **Phi-2 Ready** | On-device LLM integration prepared |
+| 🎨 **Clean UI Redesign** | Modern shadcn-style white interface |
+| 🚀 **Universal Text Injection** | Uses `InputConnection.commitText()` like real keyboards |
+| 📝 **Word Compatibility** | Smart clipboard fallback with toast notification |
+| ⌨️ **Organized Layout** | Card-based main screen with clear sections |
+| 📋 **Smart Clipboard** | "✓ Copied! Tap text field to paste" notification |
 
 ---
 
@@ -76,7 +76,7 @@ Fully local voice dictation with advanced AI post-processing
 
 ### Download & Install
 
-1. **Download** [`VoiceAI-v1.1.0.apk`](../../releases/latest) from Releases
+1. **Download** [`VoiceAI-v1.2.0.apk`](../../releases/latest) from Releases
 2. **Install** on your Android device
 3. **Enable** in Settings → Language & Input → Keyboards
 4. **Enable** Accessibility Service for text injection
@@ -180,7 +180,7 @@ cd VoiceAI
 ./build.ps1
 
 # Install
-adb install -r VoiceAI-v1.1.0.apk
+adb install -r VoiceAI-v1.2.0.apk
 ```
 
 **Requirements:**
