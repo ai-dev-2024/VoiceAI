@@ -44,139 +44,119 @@ public class SettingsActivity extends Activity {
         private void createUI() {
                 ScrollView scroll = new ScrollView(this);
                 // Clean white background like shadcn/GitHub
-                scroll.setBackgroundColor(0xFFFAFAFA); // Very light gray (GitHub bg)
+                scroll.setBackgroundColor(0xFFFAFAFA); // Very light gray
 
                 LinearLayout root = new LinearLayout(this);
                 root.setOrientation(LinearLayout.VERTICAL);
-                root.setPadding(24, 40, 24, 40);
+                root.setPadding(24, 48, 24, 40);
 
-                // Header with back button and title
+                // Header with back button
                 LinearLayout header = new LinearLayout(this);
-                header.setOrientation(LinearLayout.HORIZONTAL);
-                header.setGravity(Gravity.CENTER_VERTICAL);
-                header.setPadding(0, 0, 0, 20);
+                header.setOrientation(LinearLayout.VERTICAL);
+                header.setPadding(0, 0, 0, 24);
 
                 TextView backBtn = new TextView(this);
                 backBtn.setText("←");
-                backBtn.setTextSize(22);
-                backBtn.setTextColor(0xFF24292F); // GitHub dark text
-                backBtn.setPadding(0, 0, 16, 0);
+                backBtn.setTextSize(24);
+                backBtn.setTextColor(0xFF24292F);
+                backBtn.setPadding(0, 0, 0, 16);
                 backBtn.setOnClickListener(v -> finish());
                 header.addView(backBtn);
 
+                // Title row with version
+                LinearLayout titleRow = new LinearLayout(this);
+                titleRow.setOrientation(LinearLayout.HORIZONTAL);
+                titleRow.setGravity(Gravity.CENTER_VERTICAL);
+
                 TextView title = new TextView(this);
                 title.setText("Settings");
-                title.setTextSize(24);
-                title.setTextColor(0xFF24292F); // Dark text
-                title.setTypeface(
-                                android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD));
-                LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(
-                                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-                title.setLayoutParams(titleParams);
-                header.addView(title);
+                title.setTextSize(28);
+                title.setTextColor(0xFF24292F);
+                title.setTypeface(android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD));
+                titleRow.addView(title);
 
-                // Simple version badge
                 TextView versionBadge = new TextView(this);
                 versionBadge.setText("v" + APP_VERSION);
                 versionBadge.setTextSize(12);
-                versionBadge.setTextColor(0xFF656D76); // Muted gray
-                versionBadge.setPadding(12, 4, 12, 4);
+                versionBadge.setTextColor(0xFF656D76);
+                versionBadge.setPadding(16, 6, 16, 6);
                 GradientDrawable badgeBg = new GradientDrawable();
-                badgeBg.setColor(0xFFEFF1F3); // Light gray background
-                badgeBg.setCornerRadius(12f);
-                badgeBg.setStroke(1, 0xFFD1D9E0); // Subtle border
+                badgeBg.setColor(0xFFEFF1F3);
+                badgeBg.setCornerRadius(16f);
+                badgeBg.setStroke(1, 0xFFD1D9E0);
                 versionBadge.setBackground(badgeBg);
-                header.addView(versionBadge);
+                LinearLayout.LayoutParams badgeParams = new LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                badgeParams.setMargins(12, 0, 0, 0);
+                versionBadge.setLayoutParams(badgeParams);
+                titleRow.addView(versionBadge);
 
+                header.addView(titleRow);
                 root.addView(header);
 
-                // Recording Settings Section
-                root.addView(createSectionTitle("Recording"));
+                // RECORDING Section
+                root.addView(createSectionTitle("RECORDING"));
 
-                LinearLayout recordingCard = createCard();
-                recordingCard.addView(createToggleTile(
-                                "⏱️ 30-Second Limit",
-                                "Auto-stop after 30 seconds",
-                                PREF_TIME_LIMIT,
-                                true));
-                recordingCard.addView(createDivider());
-                recordingCard.addView(createToggleTile(
-                                "🔇 Auto-stop on Silence",
-                                "Stop when silence detected (~2s)",
-                                PREF_AUTO_SILENCE,
-                                true));
-                root.addView(recordingCard);
+                // Auto-Record toggle card (separate card)
+                root.addView(createSimpleToggleCard("Auto-Record", PREF_TIME_LIMIT, true));
 
-                // Keyboard Setup Section
-                root.addView(createSectionTitle("Keyboard Setup"));
+                // High Quality toggle card (separate card)
+                root.addView(createSimpleToggleCard("High Quality", PREF_AUTO_SILENCE, true));
 
-                LinearLayout keyboardCard = createCard();
-                keyboardCard.addView(createActionTile(
-                                "⌨️ Enable VoiceAI Keyboard",
-                                "Open keyboard settings",
-                                () -> {
-                                        Intent intent = new Intent(Settings.ACTION_INPUT_METHOD_SETTINGS);
-                                        startActivity(intent);
-                                }));
-                keyboardCard.addView(createDivider());
-                keyboardCard.addView(createActionTile(
-                                "🎤 Set as Voice Input",
-                                "Select VoiceAI for dictation",
-                                () -> {
-                                        Intent intent = new Intent(Settings.ACTION_INPUT_METHOD_SETTINGS);
-                                        startActivity(intent);
-                                }));
-                root.addView(keyboardCard);
+                // ACCESSIBILITY Section
+                root.addView(createSectionTitle("ACCESSIBILITY"));
 
-                // Accessibility Section (IMPORTANT for SwiftKey)
-                root.addView(createSectionTitle("Accessibility"));
-
-                LinearLayout accessCard = createCard();
-
-                // Status indicator
+                // Voice Feedback card - simple card matching mockup
                 boolean isAccessEnabled = VoiceTextInjectionService.isServiceEnabled(this);
-                LinearLayout accessTile = new LinearLayout(this);
-                accessTile.setOrientation(LinearLayout.HORIZONTAL);
-                accessTile.setGravity(Gravity.CENTER_VERTICAL);
-                accessTile.setPadding(16, 14, 16, 14);
+                LinearLayout accessCard = new LinearLayout(this);
+                accessCard.setOrientation(LinearLayout.HORIZONTAL);
+                accessCard.setGravity(Gravity.CENTER_VERTICAL);
+                accessCard.setPadding(20, 18, 20, 18);
 
-                TextView accessIcon = new TextView(this);
-                accessIcon.setText(isAccessEnabled ? "✅" : "⚠️");
-                accessIcon.setTextSize(20);
-                accessIcon.setPadding(0, 0, 12, 0);
-                accessTile.addView(accessIcon);
+                GradientDrawable accessBg = new GradientDrawable();
+                accessBg.setColor(0xFFFFFFFF);
+                accessBg.setCornerRadius(12f);
+                accessBg.setStroke(1, 0xFFE5E7EB);
+                accessCard.setBackground(accessBg);
 
-                LinearLayout accessTextLayout = new LinearLayout(this);
-                accessTextLayout.setOrientation(LinearLayout.VERTICAL);
-                LinearLayout.LayoutParams accessTextParams = new LinearLayout.LayoutParams(0,
-                                LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-                accessTextLayout.setLayoutParams(accessTextParams);
+                LinearLayout.LayoutParams accessParams = new LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                accessParams.setMargins(0, 4, 0, 8);
+                accessCard.setLayoutParams(accessParams);
 
                 TextView accessTitle = new TextView(this);
-                accessTitle.setText("Text Injection Service");
-                accessTitle.setTextSize(15);
-                accessTitle.setTextColor(0xFF24292F); // Dark text
-                accessTextLayout.addView(accessTitle);
+                accessTitle.setText("Voice Feedback");
+                accessTitle.setTextSize(16);
+                accessTitle.setTextColor(0xFF24292F);
+                LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(0,
+                                LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+                accessTitle.setLayoutParams(titleParams);
+                accessCard.addView(accessTitle);
 
-                TextView accessSubtitle = new TextView(this);
-                accessSubtitle.setText(isAccessEnabled ? "Enabled - text will be inserted directly"
-                                : "Required for SwiftKey and other apps");
-                accessSubtitle.setTextSize(13);
-                accessSubtitle.setTextColor(isAccessEnabled ? 0xFF22C55E : 0xFFEA580C); // Green or orange
-                accessTextLayout.addView(accessSubtitle);
-                accessTile.addView(accessTextLayout);
+                // Status indicator - green dot + Enabled
+                LinearLayout statusRow = new LinearLayout(this);
+                statusRow.setOrientation(LinearLayout.HORIZONTAL);
+                statusRow.setGravity(Gravity.CENTER_VERTICAL);
 
-                TextView accessBtn = new TextView(this);
-                accessBtn.setText(isAccessEnabled ? "✓ Enabled" : "Enable →");
-                accessBtn.setTextSize(14);
-                accessBtn.setTextColor(isAccessEnabled ? 0xFF22C55E : 0xFF2563EB); // Green or blue
-                accessTile.addView(accessBtn);
+                TextView dot = new TextView(this);
+                dot.setText("●");
+                dot.setTextSize(10);
+                dot.setTextColor(isAccessEnabled ? 0xFF22C55E : 0xFFEA580C);
+                dot.setPadding(0, 0, 6, 0);
+                statusRow.addView(dot);
 
-                accessTile.setOnClickListener(v -> {
+                TextView statusText = new TextView(this);
+                statusText.setText(isAccessEnabled ? "Enabled" : "Disabled");
+                statusText.setTextSize(14);
+                statusText.setTextColor(isAccessEnabled ? 0xFF22C55E : 0xFFEA580C);
+                statusRow.addView(statusText);
+
+                accessCard.addView(statusRow);
+
+                accessCard.setOnClickListener(v -> {
                         Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
                         startActivity(intent);
                 });
-                accessCard.addView(accessTile);
                 root.addView(accessCard);
 
                 // AI Settings Section
@@ -323,6 +303,73 @@ public class SettingsActivity extends Activity {
                                 LinearLayout.LayoutParams.WRAP_CONTENT);
                 params.setMargins(0, 4, 0, 8);
                 card.setLayoutParams(params);
+
+                return card;
+        }
+
+        // Simple toggle card - just title and toggle, no subtitle (matches mockup)
+        private LinearLayout createSimpleToggleCard(String title, String prefKey, boolean defaultValue) {
+                LinearLayout card = new LinearLayout(this);
+                card.setOrientation(LinearLayout.HORIZONTAL);
+                card.setGravity(Gravity.CENTER_VERTICAL);
+                card.setPadding(20, 18, 20, 18);
+
+                GradientDrawable bg = new GradientDrawable();
+                bg.setColor(0xFFFFFFFF);
+                bg.setCornerRadius(12f);
+                bg.setStroke(1, 0xFFE5E7EB);
+                card.setBackground(bg);
+
+                LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                cardParams.setMargins(0, 4, 0, 8);
+                card.setLayoutParams(cardParams);
+
+                // Title
+                TextView titleTv = new TextView(this);
+                titleTv.setText(title);
+                titleTv.setTextSize(16);
+                titleTv.setTextColor(0xFF24292F);
+                LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(0,
+                                LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+                titleTv.setLayoutParams(titleParams);
+                card.addView(titleTv);
+
+                // Toggle switch
+                final boolean[] isOn = { prefs.getBoolean(prefKey, defaultValue) };
+
+                FrameLayout toggleContainer = new FrameLayout(this);
+                toggleContainer.setLayoutParams(new LinearLayout.LayoutParams(56, 32));
+
+                GradientDrawable trackBg = new GradientDrawable();
+                trackBg.setCornerRadius(16f);
+                trackBg.setColor(isOn[0] ? 0xFF22C55E : 0xFFE5E5EA);
+                toggleContainer.setBackground(trackBg);
+
+                android.view.View thumb = new android.view.View(this);
+                GradientDrawable thumbBg = new GradientDrawable();
+                thumbBg.setShape(GradientDrawable.OVAL);
+                thumbBg.setColor(0xFFFFFFFF);
+                thumb.setBackground(thumbBg);
+                thumb.setElevation(2f);
+
+                FrameLayout.LayoutParams thumbParams = new FrameLayout.LayoutParams(26, 26);
+                thumbParams.gravity = Gravity.CENTER_VERTICAL;
+                thumbParams.setMargins(isOn[0] ? 27 : 3, 3, 3, 3);
+                thumb.setLayoutParams(thumbParams);
+                toggleContainer.addView(thumb);
+
+                toggleContainer.setOnClickListener(v -> {
+                        isOn[0] = !isOn[0];
+                        prefs.edit().putBoolean(prefKey, isOn[0]).apply();
+                        ((GradientDrawable) toggleContainer.getBackground())
+                                        .setColor(isOn[0] ? 0xFF22C55E : 0xFFE5E5EA);
+                        FrameLayout.LayoutParams newParams = new FrameLayout.LayoutParams(26, 26);
+                        newParams.gravity = Gravity.CENTER_VERTICAL;
+                        newParams.setMargins(isOn[0] ? 27 : 3, 3, 3, 3);
+                        thumb.setLayoutParams(newParams);
+                });
+                card.addView(toggleContainer);
 
                 return card;
         }

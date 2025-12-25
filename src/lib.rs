@@ -269,87 +269,123 @@ impl eframe::App for TranscribeApp {
                             });
                     }
                     OnboardingStep::Ready => {
-                        // Main Action Card - Settings
+                        // Settings & Dictionary Card - Horizontal layout
                         egui::Frame::none()
                             .fill(egui::Color32::WHITE)
                             .rounding(12.0)
                             .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(229, 231, 235)))
-                            .inner_margin(24.0)
+                            .inner_margin(20.0)
                             .show(ui, |ui| {
-                                ui.set_width(300.0);
-                                ui.vertical_centered(|ui| {
-                                    ui.label(egui::RichText::new("⚙️")
-                                        .size(32.0));
-                                    ui.add_space(12.0);
-                                    ui.label(egui::RichText::new("Settings & Dictionary")
-                                        .size(18.0)
-                                        .strong()
-                                        .color(egui::Color32::from_rgb(36, 41, 47)));
-                                    ui.add_space(4.0);
-                                    ui.label(egui::RichText::new("Configure recording and add custom words")
-                                        .size(13.0)
-                                        .color(egui::Color32::from_rgb(101, 109, 118)));
+                                ui.set_width(320.0);
+                                ui.horizontal(|ui| {
+                                    // Icon box (gray rounded square)
+                                    egui::Frame::none()
+                                        .fill(egui::Color32::from_rgb(75, 85, 99))
+                                        .rounding(12.0)
+                                        .inner_margin(12.0)
+                                        .show(ui, |ui| {
+                                            ui.label(egui::RichText::new("⚙")
+                                                .size(24.0)
+                                                .color(egui::Color32::WHITE));
+                                        });
+                                    
                                     ui.add_space(16.0);
                                     
-                                    #[cfg(target_os = "android")]
-                                    if ui.add(egui::Button::new(
-                                        egui::RichText::new("Open Settings")
-                                            .size(15.0)
-                                            .color(egui::Color32::WHITE))
-                                        .fill(egui::Color32::from_rgb(36, 41, 47))
-                                        .min_size(egui::vec2(180.0, 42.0))
-                                        .rounding(8.0))
-                                        .clicked() {
-                                        let _ = open_settings_activity();
-                                    }
+                                    // Text content
+                                    ui.vertical(|ui| {
+                                        ui.label(egui::RichText::new("Settings & Dictionary")
+                                            .size(17.0)
+                                            .strong()
+                                            .color(egui::Color32::from_rgb(36, 41, 47)));
+                                        ui.add_space(2.0);
+                                        ui.label(egui::RichText::new("Configure recording and add\ncustom words")
+                                            .size(13.0)
+                                            .color(egui::Color32::from_rgb(107, 114, 128)));
+                                    });
                                 });
+                                
+                                ui.add_space(16.0);
+                                
+                                // Full-width button
+                                #[cfg(target_os = "android")]
+                                if ui.add(egui::Button::new(
+                                    egui::RichText::new("Open Settings")
+                                        .size(15.0)
+                                        .color(egui::Color32::WHITE))
+                                    .fill(egui::Color32::from_rgb(55, 65, 81))
+                                    .min_size(egui::vec2(280.0, 44.0))
+                                    .rounding(10.0))
+                                    .clicked() {
+                                    let _ = open_settings_activity();
+                                }
                             });
                         
                         ui.add_space(16.0);
                         
-                        // Keyboard Setup Card
+                        // Keyboard Setup Card - Horizontal layout
                         egui::Frame::none()
                             .fill(egui::Color32::WHITE)
                             .rounding(12.0)
                             .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(229, 231, 235)))
-                            .inner_margin(24.0)
+                            .inner_margin(20.0)
                             .show(ui, |ui| {
-                                ui.set_width(300.0);
-                                ui.vertical_centered(|ui| {
-                                    ui.label(egui::RichText::new("⌨️")
-                                        .size(32.0));
-                                    ui.add_space(12.0);
-                                    ui.label(egui::RichText::new("Keyboard Setup")
-                                        .size(18.0)
-                                        .strong()
-                                        .color(egui::Color32::from_rgb(36, 41, 47)));
-                                    ui.add_space(4.0);
-                                    ui.label(egui::RichText::new("Enable VoiceAI as input method")
-                                        .size(13.0)
-                                        .color(egui::Color32::from_rgb(101, 109, 118)));
+                                ui.set_width(320.0);
+                                ui.horizontal(|ui| {
+                                    // Icon box (gray rounded square)
+                                    egui::Frame::none()
+                                        .fill(egui::Color32::from_rgb(75, 85, 99))
+                                        .rounding(12.0)
+                                        .inner_margin(12.0)
+                                        .show(ui, |ui| {
+                                            ui.label(egui::RichText::new("⌨")
+                                                .size(24.0)
+                                                .color(egui::Color32::WHITE));
+                                        });
+                                    
                                     ui.add_space(16.0);
                                     
-                                    #[cfg(target_os = "android")]
-                                    if ui.add(egui::Button::new(
-                                        egui::RichText::new("Keyboard Settings")
-                                            .size(15.0)
-                                            .color(egui::Color32::from_rgb(36, 41, 47)))
-                                        .fill(egui::Color32::TRANSPARENT)
-                                        .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(209, 213, 219)))
-                                        .min_size(egui::vec2(180.0, 42.0))
-                                        .rounding(8.0))
-                                        .clicked() {
-                                        let _ = open_ime_settings();
-                                    }
+                                    // Text content
+                                    ui.vertical(|ui| {
+                                        ui.label(egui::RichText::new("Keyboard Setup")
+                                            .size(17.0)
+                                            .strong()
+                                            .color(egui::Color32::from_rgb(36, 41, 47)));
+                                        ui.add_space(2.0);
+                                        ui.label(egui::RichText::new("Enable VoiceAI as input\nmethod")
+                                            .size(13.0)
+                                            .color(egui::Color32::from_rgb(107, 114, 128)));
+                                    });
                                 });
+                                
+                                ui.add_space(16.0);
+                                
+                                // Full-width outline button
+                                #[cfg(target_os = "android")]
+                                if ui.add(egui::Button::new(
+                                    egui::RichText::new("Keyboard Settings")
+                                        .size(15.0)
+                                        .color(egui::Color32::from_rgb(55, 65, 81)))
+                                    .fill(egui::Color32::TRANSPARENT)
+                                    .stroke(egui::Stroke::new(1.5, egui::Color32::from_rgb(209, 213, 219)))
+                                    .min_size(egui::vec2(280.0, 44.0))
+                                    .rounding(10.0))
+                                    .clicked() {
+                                    let _ = open_ime_settings();
+                                }
                             });
                         
-                        ui.add_space(32.0);
+                        ui.add_space(48.0);
                         
-                        // Status at bottom
-                        ui.label(egui::RichText::new(format!("● {}", self.status_msg))
-                            .size(13.0)
-                            .color(egui::Color32::from_rgb(34, 197, 94)));
+                        // Status at bottom - green dot with text
+                        ui.horizontal(|ui| {
+                            ui.label(egui::RichText::new("●")
+                                .size(14.0)
+                                .color(egui::Color32::from_rgb(34, 197, 94)));
+                            ui.add_space(4.0);
+                            ui.label(egui::RichText::new(&self.status_msg)
+                                .size(16.0)
+                                .color(egui::Color32::from_rgb(34, 197, 94)));
+                        });
                     }
                 }
             });
