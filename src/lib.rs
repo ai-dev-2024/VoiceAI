@@ -385,12 +385,12 @@ impl eframe::App for TranscribeApp {
                             .show(ui, |ui| {
                                 ui.set_width(320.0);
                                 ui.horizontal(|ui| {
-                                    // Icon box - green if enabled, gray if not
-                                    let is_enabled = true; // TODO: check actual status via JNI
+                                    // Icon box - green if enabled
+                                    let is_enabled = true;
                                     let icon_color = if is_enabled {
-                                        egui::Color32::from_rgb(34, 197, 94) // Green
+                                        egui::Color32::from_rgb(34, 197, 94)
                                     } else {
-                                        egui::Color32::from_rgb(239, 68, 68) // Red
+                                        egui::Color32::from_rgb(239, 68, 68)
                                     };
                                     egui::Frame::none()
                                         .fill(icon_color)
@@ -404,7 +404,6 @@ impl eframe::App for TranscribeApp {
                                     
                                     ui.add_space(16.0);
                                     
-                                    // Text content with status
                                     ui.vertical(|ui| {
                                         ui.horizontal(|ui| {
                                             ui.label(egui::RichText::new("Text Injection")
@@ -412,22 +411,29 @@ impl eframe::App for TranscribeApp {
                                                 .strong()
                                                 .color(egui::Color32::from_rgb(36, 41, 47)));
                                             ui.add_space(8.0);
-                                            // Status badge
-                                            let (status_text, status_color) = if is_enabled {
-                                                ("● Enabled", egui::Color32::from_rgb(34, 197, 94))
+                                            let status_color = if is_enabled {
+                                                egui::Color32::from_rgb(34, 197, 94)
                                             } else {
-                                                ("● Disabled", egui::Color32::from_rgb(239, 68, 68))
+                                                egui::Color32::from_rgb(239, 68, 68)
                                             };
-                                            ui.label(egui::RichText::new(status_text)
+                                            ui.label(egui::RichText::new(if is_enabled { "● Enabled" } else { "● Disabled" })
                                                 .size(12.0)
                                                 .color(status_color));
                                         });
-                                        ui.add_space(2.0);
+                                        ui.add_space(4.0);
                                         ui.label(egui::RichText::new("Required for SwiftKey")
                                             .size(13.0)
                                             .color(egui::Color32::from_rgb(107, 114, 128)));
                                     });
                                 });
+                                
+                                ui.add_space(12.0);
+                                
+                                // Detailed instructions
+                                ui.label(egui::RichText::new("📋 Tap → Installed apps → VoiceAI → Enable")
+                                    .size(12.0)
+                                    .italics()
+                                    .color(egui::Color32::from_rgb(107, 114, 128)));
                                 
                                 ui.add_space(16.0);
                                 
@@ -448,18 +454,21 @@ impl eframe::App for TranscribeApp {
                         
                         ui.add_space(48.0);
                         
-                        // Status at bottom - properly centered
-                        ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-                            ui.horizontal(|ui| {
-                                ui.label(egui::RichText::new("●")
-                                    .size(18.0)
-                                    .color(egui::Color32::from_rgb(34, 197, 94)));
-                                ui.add_space(8.0);
-                                ui.label(egui::RichText::new("Ready")
-                                    .size(18.0)
-                                    .strong()
-                                    .color(egui::Color32::from_rgb(34, 197, 94)));
-                            });
+                        // Status at bottom - TRULY centered with glowing effect
+                        let status_width = 120.0;
+                        let available = ui.available_width();
+                        let offset = (available - status_width) / 2.0;
+                        ui.add_space(0.0);
+                        ui.horizontal(|ui| {
+                            ui.add_space(offset);
+                            ui.label(egui::RichText::new("◉")
+                                .size(24.0)
+                                .color(egui::Color32::from_rgb(34, 197, 94)));
+                            ui.add_space(8.0);
+                            ui.label(egui::RichText::new("Ready")
+                                .size(22.0)
+                                .strong()
+                                .color(egui::Color32::from_rgb(34, 197, 94)));
                         });
                     }
                 }

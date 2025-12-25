@@ -1,9 +1,9 @@
-# VoiceAI v1.2.0 Windows Build Script
+# VoiceAI v1.2.1 Windows Build Script
 # Requires: Rust with aarch64-linux-android target, Android SDK, Android NDK, LLVM
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "=== VoiceAI v1.2.0 Windows Build ==="
+Write-Host "=== VoiceAI v1.2.1 Windows Build ==="
 
 # --- Configuration ---
 $ANDROID_HOME = $env:ANDROID_HOME
@@ -171,9 +171,9 @@ Pop-Location
 # Sign
 Write-Host "--- Signing ---"
 & $ZIPALIGN -f -v 4 build_manual\apk\unaligned.apk build_manual\apk\aligned.apk
-& $APKSIGNER sign --ks $KEYSTORE --ks-pass pass:android --key-pass pass:android --ks-key-alias androiddebugkey --out VoiceAI-v1.2.0.apk build_manual\apk\aligned.apk
+& $APKSIGNER sign --ks $KEYSTORE --ks-pass pass:android --key-pass pass:android --ks-key-alias androiddebugkey --out VoiceAI-v1.2.1.apk build_manual\apk\aligned.apk
 if ($LASTEXITCODE -ne 0) { Write-Error "Signing failed"; exit 1 }
 
 Write-Host ""
-Write-Host "SUCCESS: VoiceAI-v1.2.0.apk created!"
-Write-Host "Install with: adb install -r VoiceAI-v1.2.0.apk"
+Write-Host "SUCCESS: VoiceAI-v1.2.1.apk created!"
+Write-Host "Install with: adb install -r VoiceAI-v1.2.1.apk"
