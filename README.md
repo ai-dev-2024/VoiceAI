@@ -30,17 +30,17 @@ Fully local voice dictation with advanced AI post-processing
 
 ---
 
-## 🆕 What's New in v1.2.0
+## 🆕 What's New in v1.2.1
 
 | Feature | Description |
 |---------|-------------|
-| 🎨 **Clean UI Redesign** | Modern shadcn-style white interface with Inter-style fonts |
+| 🎨 **Centered Ready Status** | Perfectly centered at bottom with glowing ◉ icon |
+| 📋 **Accessibility Instructions** | Step-by-step guide: Tap → Installed apps → VoiceAI → Enable |
+| 🔘 **Larger Toggle Switches** | 130x60 with 52px thumb for better usability |
+| ☕ **Support Link** | Ko-fi link embedded in Settings → About section |
 | 🧠 **Offline LLM Model** | Download Qwen3 0.6B for fully offline AI post-processing |
 | 🔗 **One-Click API Setup** | "Get Free API Key" button opens Groq console directly |
 | ✅ **Accessibility Status** | Green/red indicator shows Text Injection Service status |
-| 🚀 **Universal Text Injection** | Uses `InputConnection.commitText()` like real keyboards |
-| ⌨️ **Organized Layout** | Card-based main screen with clear sections |
-| 📋 **Smart Clipboard** | "✓ Copied! Tap text field to paste" notification |
 
 ---
 

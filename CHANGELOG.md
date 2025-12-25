@@ -2,6 +2,23 @@
 
 All notable changes to VoiceAI will be documented in this file.
 
+## [1.2.1] - 2025-12-25
+
+### Fixed - UI Polish 🎨
+- **Ready status now truly centered** - Uses manual offset calculation for perfect centering
+- **Glowing status icon** - Changed from ● to ◉ for better visibility
+- **Larger toggle switches** - Increased from 100x50 to 130x60 with 52px thumb
+
+### Added
+- **Detailed accessibility instructions** - Shows "📋 Tap → Installed apps → VoiceAI → Enable"
+- **Ko-fi support link** - https://ko-fi.com/ai_dev_2024 in app and README
+
+### Changed
+- Updated toggle button margins for proper thumb positioning
+- All version references updated to 1.2.1
+
+---
+
 ## [1.2.0] - 2025-12-25
 
 ### Added - Production Release 🎉
