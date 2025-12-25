@@ -4,26 +4,31 @@ All notable changes to VoiceAI will be documented in this file.
 
 ## [1.2.0] - 2025-12-25
 
-### Added - Major Update 🎉
-- **Clean UI Redesign** - Modern shadcn-style white interface
+### Added - Production Release 🎉
+- **Clean UI Redesign** - Modern shadcn-style white interface with Inter-style fonts
   - Light gray background (#FAFAFA) with white cards
   - Card-based layout for main screen and settings
-  - Green toggle switches, dark buttons, subtle borders
+  - Green toggle switches (100x50), dark buttons, subtle borders
+- **Offline LLM Model Download** - Qwen3 0.6B for fully offline AI post-processing
+  - Download progress indicator with percentage
+  - Model stored in app's private files directory (~400MB)
+- **One-Click Groq API Setup** - "Get Free API Key" button opens console.groq.com/keys
+- **Accessibility Status Indicator** - Green/red dot on main screen shows service status
 - **Universal Text Injection via IME** - Uses `InputConnection.commitText()` like real keyboards
   - Works in ALL apps including Microsoft Word, Chrome, etc.
   - Same method FUTO Keyboard and SwiftKey use
 - **Smart Clipboard Fallback** - For apps that don't support any injection method
   - Shows toast: "✓ Copied! Tap text field to paste"
-- **New Modern AI App Icon** - Clean gradient design (blue → purple) with waveform
+- **Support Developer Link** - Ko-fi link embedded in Settings → About section
 
 ### Fixed
+- Ready status now properly centered on main screen
 - Word Android text injection (now uses clipboard + toast notification)
-- Toast notifications now display on main thread correctly
 
 ### Changed
-- Complete UI overhaul to clean white theme (removed dark glass theme)
-- Reorganized main screen layout with Settings prominent at top
-- Version display updated across all UI components
+- Removed accessibility section from Settings (now on main screen)
+- Complete UI overhaul to clean white theme
+- Reorganized main screen layout with Settings, Keyboard Setup, and Accessibility cards
 
 ---
 
