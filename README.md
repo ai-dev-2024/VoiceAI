@@ -213,7 +213,7 @@ adb install -r VoiceAI-v1.2.0.apk
 
 If you find VoiceAI useful, consider supporting the development:
 
-[![Ko-fi](https://img.shields.io/badge/Buy%20me%20a%20coffee-Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/mjyoke1111)
+[![Ko-fi](https://img.shields.io/badge/Buy%20me%20a%20coffee-Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/ai_dev_2024)
 
 ---
 

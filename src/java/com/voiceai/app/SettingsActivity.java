@@ -24,7 +24,7 @@ import android.view.View;
  */
 public class SettingsActivity extends Activity {
 
-        public static final String APP_VERSION = "1.2.0";
+        private static final String APP_VERSION = "1.2.1";
 
         public static final String PREFS_NAME = "VoiceAIPrefs";
         public static final String PREF_TIME_LIMIT = "transcription_time_limit";
@@ -353,7 +353,7 @@ public class SettingsActivity extends Activity {
 
                 supportTile.setOnClickListener(v -> {
                         Intent intent = new Intent(Intent.ACTION_VIEW);
-                        intent.setData(android.net.Uri.parse("https://ko-fi.com/mjyoke1111"));
+                        intent.setData(android.net.Uri.parse("https://ko-fi.com/ai_dev_2024"));
                         startActivity(intent);
                 });
                 aboutCard.addView(supportTile);
@@ -492,10 +492,10 @@ public class SettingsActivity extends Activity {
                 final boolean[] isOn = { prefs.getBoolean(prefKey, defaultValue) };
 
                 FrameLayout toggleContainer = new FrameLayout(this);
-                toggleContainer.setLayoutParams(new LinearLayout.LayoutParams(100, 50));
+                toggleContainer.setLayoutParams(new LinearLayout.LayoutParams(130, 60));
 
                 GradientDrawable trackBg = new GradientDrawable();
-                trackBg.setCornerRadius(25f);
+                trackBg.setCornerRadius(30f);
                 trackBg.setColor(isOn[0] ? 0xFF22C55E : 0xFFE5E7EB); // Green when on, light gray when off
                 toggleContainer.setBackground(trackBg);
 
@@ -506,9 +506,9 @@ public class SettingsActivity extends Activity {
                 thumbBg.setColor(Color.WHITE);
                 thumb.setBackground(thumbBg);
                 thumb.setElevation(4f);
-                FrameLayout.LayoutParams thumbParams = new FrameLayout.LayoutParams(42, 42);
+                FrameLayout.LayoutParams thumbParams = new FrameLayout.LayoutParams(52, 52);
                 thumbParams.gravity = Gravity.CENTER_VERTICAL;
-                thumbParams.setMargins(isOn[0] ? 54 : 4, 4, 4, 4);
+                thumbParams.setMargins(isOn[0] ? 74 : 4, 4, 4, 4);
                 thumb.setLayoutParams(thumbParams);
                 toggleContainer.addView(thumb);
 
@@ -522,9 +522,9 @@ public class SettingsActivity extends Activity {
                         // Update visual
                         ((GradientDrawable) toggleContainer.getBackground())
                                         .setColor(isOn[0] ? 0xFF22C55E : 0xFFE5E7EB);
-                        FrameLayout.LayoutParams newParams = new FrameLayout.LayoutParams(42, 42);
+                        FrameLayout.LayoutParams newParams = new FrameLayout.LayoutParams(52, 52);
                         newParams.gravity = Gravity.CENTER_VERTICAL;
-                        newParams.setMargins(isOn[0] ? 54 : 4, 4, 4, 4);
+                        newParams.setMargins(isOn[0] ? 74 : 4, 4, 4, 4);
                         thumb.setLayoutParams(newParams);
                 });
 
