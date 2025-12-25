@@ -101,6 +101,7 @@ public class NumberNormalizer implements TextProcessor {
         String result = text;
 
         // Order matters - process complex patterns first
+        result = normalizeSequentialDigits(result); // NEW: "one two three four" → "1234"
         result = normalizeYears(result);
         result = normalizeTimes(result);
         result = normalizeOrdinals(result);
@@ -113,6 +114,44 @@ public class NumberNormalizer implements TextProcessor {
         result = normalizeSimpleNumbers(result);
 
         return result;
+    }
+
+    /**
+     * Sequential digits: "one two three four five six seven eight nine ten" →
+     * "12345678910"
+     * This handles phone numbers, serial numbers, IDs, etc.
+     * Pattern: 3 or more consecutive single-digit words get concatenated
+     */
+    private String normalizeSequentialDigits(String text) {
+        String result = text;
+
+        // Match 3+ consecutive single digit words (allows for "one two three four...")
+        // This pattern matches sequences of number words
+        Pattern seqPattern = Pattern.compile(
+                "(?i)\\b((?:(?:zero|one|two|three|four|five|six|seven|eight|nine|ten)\\s+){2,}(?:zero|one|two|three|four|five|six|seven|eight|nine|ten))\\b");
+
+        Matcher matcher = seqPattern.matcher(result);
+        StringBuffer sb = new StringBuffer();
+
+        while (matcher.find()) {
+            String sequence = matcher.group(1);
+            String[] words = sequence.toLowerCase().split("\\s+");
+            StringBuilder digits = new StringBuilder();
+
+            for (String word : words) {
+                word = word.trim();
+                if (ONES.containsKey(word)) {
+                    digits.append(ONES.get(word));
+                } else if (word.equals("ten")) {
+                    digits.append("10");
+                }
+            }
+
+            matcher.appendReplacement(sb, digits.toString());
+        }
+        matcher.appendTail(sb);
+
+        return sb.toString();
     }
 
     /**
@@ -358,23 +397,46 @@ public class NumberNormalizer implements TextProcessor {
     }
 
     /**
-     * Currency: "one hundred dollars" → "$100"
+     * Currency: Wispr Flow-style formatting
+     * - "ten dollars" → "$10"
+     * - "ten US dollars" → "$10 USD"
+     * - "thirty million US dollars" → "$30 million USD"
+     * - "thirty million dollars" → "$30 million"
+     * - "twelve percent" → "12%"
      * 
      * BUG FIX: Check for existing $ before adding
      */
     private String normalizeCurrency(String text) {
         String result = text;
 
-        // Million/thousand scales first
-        result = result.replaceAll("(?i)(\\d+)\\s+million\\s+US\\s*dollars?", "\\$$1,000,000 USD");
-        result = result.replaceAll("(?i)(\\d+)\\s+million\\s*dollars?", "\\$$1,000,000");
+        // Billion scales with USD
+        result = result.replaceAll("(?i)(\\d+)\\s+billion\\s+US\\s*dollars?", "\\$$1 billion USD");
+        result = result.replaceAll("(?i)(\\d+)\\s+billion\\s*dollars?", "\\$$1 billion");
+
+        // Million scales with USD (Wispr Flow style: $30 million USD)
+        result = result.replaceAll("(?i)(\\d+)\\s+million\\s+US\\s*dollars?", "\\$$1 million USD");
+        result = result.replaceAll("(?i)(\\d+)\\s+million\\s*dollars?", "\\$$1 million");
+
+        // Thousand scales
         result = result.replaceAll("(?i)(\\d+)\\s+thousand\\s+US\\s*dollars?", "\\$$1,000 USD");
         result = result.replaceAll("(?i)(\\d+)\\s+thousand\\s*dollars?", "\\$$1,000");
 
-        // Simple amounts - only if not already prefixed with $
+        // Hundred scales
+        result = result.replaceAll("(?i)(\\d+)\\s+hundred\\s+US\\s*dollars?", "\\$$100 USD");
+        result = result.replaceAll("(?i)(\\d+)\\s+hundred\\s*dollars?", "\\$$100");
+
+        // Simple amounts with USD - only if not already prefixed with $
         result = result.replaceAll("(?i)(?<!\\$)(\\d+)\\s+US\\s*dollars?", "\\$$1 USD");
+        result = result.replaceAll("(?i)(?<!\\$)(\\d+)\\s+USD", "\\$$1 USD");
+
+        // Simple amounts without USD
         result = result.replaceAll("(?i)(?<!\\$)(\\d+)\\s*dollars?", "\\$$1");
+
+        // Cents
         result = result.replaceAll("(?i)(\\d+)\\s*cents?", "$1¢");
+
+        // Clean up any double dollar signs
+        result = result.replaceAll("\\$\\$", "\\$");
 
         return result;
     }

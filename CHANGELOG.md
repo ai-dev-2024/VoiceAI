@@ -4,18 +4,21 @@ All notable changes to VoiceAI will be documented in this file.
 
 ## [1.2.1] - 2025-12-25
 
-### Fixed - UI Polish 🎨
-- **Ready status now truly centered** - Uses manual offset calculation for perfect centering
-- **Glowing status icon** - Changed from ● to ◉ for better visibility
-- **Larger toggle switches** - Increased from 100x50 to 130x60 with 52px thumb
+### Added - Post-Processing Improvements 🔢
+- **Sequential digit conversion** - "one two three four five" → `12345` (Wispr Flow-style)
+- **Enhanced currency formatting** - "$30 million USD", "$10 USD", "$1 billion" patterns
+- **Offline LLM activation check** - Settings toggle now properly triggers offline processing
 
-### Added
-- **Detailed accessibility instructions** - Shows "📋 Tap → Installed apps → VoiceAI → Enable"
-- **Ko-fi support link** - https://ko-fi.com/ai_dev_2024 in app and README
+### Fixed
+- **Download URL** - Changed to working Hugging Face URL (`unsloth/Qwen3-0.6B-GGUF`)
+- **Model filename** - Updated to `Qwen3-0.6B-UD-Q4_K_XL.gguf` (~405MB)
+- **Offline processing not activating** - RecognizeActivity now checks `offline_llm_enabled` setting
 
-### Changed
-- Updated toggle button margins for proper thumb positioning
-- All version references updated to 1.2.1
+### UI Polish 🎨
+- Ready status now truly centered with glowing ◉ icon
+- Larger toggle switches (130x60 with 52px thumb)
+- Detailed accessibility instructions in app
+- Ko-fi support link embedded in Settings → About
 
 ---
 

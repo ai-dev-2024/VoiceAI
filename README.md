@@ -8,7 +8,7 @@
 
 Fully local voice dictation with advanced AI post-processing
 
-[![Release](https://img.shields.io/badge/Release-v1.2.0-brightgreen?style=for-the-badge)](../../releases/latest)
+[![Release](https://img.shields.io/badge/Release-v1.2.1-brightgreen?style=for-the-badge)](../../releases/latest)
 [![Built with Antigravity](https://img.shields.io/badge/Built%20with-Google%20Antigravity-4285F4?style=for-the-badge&logo=google)](https://developers.google.com/project-antigravity)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 [![Android](https://img.shields.io/badge/Android-min%20API%2026-3DDC84?style=for-the-badge&logo=android)](https://developer.android.com)
@@ -34,13 +34,11 @@ Fully local voice dictation with advanced AI post-processing
 
 | Feature | Description |
 |---------|-------------|
-| 🎨 **Centered Ready Status** | Perfectly centered at bottom with glowing ◉ icon |
-| 📋 **Accessibility Instructions** | Step-by-step guide: Tap → Installed apps → VoiceAI → Enable |
-| 🔘 **Larger Toggle Switches** | 130x60 with 52px thumb for better usability |
-| ☕ **Support Link** | Ko-fi link embedded in Settings → About section |
-| 🧠 **Offline LLM Model** | Download Qwen3 0.6B for fully offline AI post-processing |
-| 🔗 **One-Click API Setup** | "Get Free API Key" button opens Groq console directly |
-| ✅ **Accessibility Status** | Green/red indicator shows Text Injection Service status |
+| 🔢 **Sequential Digit Conversion** | "one two three four five" → `12345` (Wispr Flow-style) |
+| 💰 **Enhanced Currency Formatting** | "thirty million US dollars" → `$30 million USD` |
+| 🧠 **Offline LLM Activation Fixed** | Settings toggle now properly activates offline processing |
+| 📥 **Fixed Model Download URL** | Qwen3 ~405MB model downloads correctly from Hugging Face |
+| 🔄 **Improved Post-Processing** | Filler removal, grammar fixes, smart punctuation |
 
 ---
 
@@ -52,7 +50,9 @@ Fully local voice dictation with advanced AI post-processing
 |---------|-------------|
 | 🔒 **100% Offline** | No internet required — all processing on-device |
 | ⚡ **Fast Transcription** | NVIDIA Parakeet TDT 0.6B model (int8 quantized) |
-| 🧠 **Offline LLM** | Qwen3 0.6B for AI post-processing without internet |
+| 🧠 **Offline LLM** | Qwen3 0.6B (~405MB) for AI post-processing without internet |
+| 🔢 **Smart Numbers** | "one two three four" → `1234` (phone numbers, IDs) |
+| 💰 **Currency Formatting** | "$30 million USD", "25%", "$100" |
 | 🎯 **Course Correction** | "No wait, I mean..." → Clean, corrected output |
 | 🗣️ **Voice Commands** | "Period", "comma", "new line", "delete that" |
 | 📖 **Personal Dictionary** | FUTO-style custom word replacements |
@@ -82,7 +82,7 @@ Fully local voice dictation with advanced AI post-processing
 
 ### Download & Install
 
-1. **Download** [`VoiceAI-v1.2.0.apk`](../../releases/latest) from Releases
+1. **Download** [`VoiceAI-v1.2.1.apk`](../../releases/latest) from Releases
 2. **Install** on your Android device
 3. **Enable** in Settings → Language & Input → Keyboards
 4. **Enable** Accessibility Service for text injection
@@ -94,6 +94,7 @@ Fully local voice dictation with advanced AI post-processing
 2. Tap the **microphone button** on your keyboard
 3. Speak naturally — use voice commands if needed
 4. Tap screen or wait for auto-stop
+
 
 ---
 
@@ -120,7 +121,9 @@ Fully local voice dictation with advanced AI post-processing
 | You Say | VoiceAI Outputs |
 |---------|-----------------|
 | "twenty five percent" | **25%** |
-| "one hundred US dollars" | **$100 USD** |
+| "thirty million US dollars" | **$30 million USD** |
+| "one hundred dollars" | **$100** |
+| "microphone testing one two three four" | **Microphone testing 1234** |
 | "twenty twenty four" | **2024** |
 | "four twenty pm" | **4:20 PM** |
 | "uh so i was thinking um" | **So, I was thinking** |
@@ -131,10 +134,50 @@ Fully local voice dictation with advanced AI post-processing
 
 Access via **VoiceAI app → Open Settings**:
 
-- **⏱️ 30-Second Limit** — Auto-stop after 30 seconds
-- **🔇 Silence Detection** — Auto-stop when you stop speaking  
-- **📖 Personal Dictionary** — Add custom words (e.g., `@Groq, ChatGPT, Anthropic`)
-- **🔑 Groq API Key** — Optional LLM-powered post-processing
+| Setting | Description |
+|---------|-------------|
+| ⏱️ **30-Second Limit** | Auto-stop dictation after 30 seconds |
+| 🔇 **Silence Detection** | Auto-stop when you stop speaking |
+| 📖 **Personal Dictionary** | Add custom words (e.g., `@Groq, ChatGPT, Anthropic`) |
+| 🧠 **Offline LLM** | Enable on-device AI post-processing |
+| 🔑 **Groq API Key** | Optional cloud LLM for enhanced formatting |
+
+---
+
+## 🧠 AI Processing Options
+
+VoiceAI offers **two AI processing modes** for intelligent text formatting:
+
+### Option 1: Offline LLM (Recommended) 🔒
+
+**Fully private, no internet required**
+
+| Model | Size | Source |
+|-------|------|--------|
+| **Qwen3 0.6B Q4** | ~405 MB | [Hugging Face](https://huggingface.co/unsloth/Qwen3-0.6B-GGUF) |
+
+**Features:**
+- ✅ Filler word removal ("um", "uh", "like")
+- ✅ Grammar corrections (contractions, "i" → "I")
+- ✅ Smart punctuation and question detection
+- ✅ Sequential digit conversion ("one two three" → "123")
+- ✅ Currency formatting ("$30 million USD")
+
+**Setup:** Settings → Offline Processing → Download (~405 MB, one-time)
+
+### Option 2: Groq API (Cloud) ☁️
+
+**Faster, more accurate, requires internet**
+
+| Provider | Model | Speed |
+|----------|-------|-------|
+| [Groq](https://console.groq.com/keys) | Llama 3.1 70B | ~500ms |
+
+**Setup:** 
+1. Get free API key at [console.groq.com/keys](https://console.groq.com/keys)
+2. Paste in Settings → API Key
+
+> 💡 **Tip:** Use Offline LLM for privacy, Groq API for best quality
 
 ---
 
@@ -160,14 +203,17 @@ VoiceAIPipeline (Chain of Responsibility)
 - **Rust** + `egui` — Native Android UI
 - **Java** — Activities, Services, Accessibility
 
-### Backend / AI
-- **ONNX Runtime** — Neural network inference
-- **Parakeet TDT 0.6B** — NVIDIA's speech-to-text model
-- **Phi-2 (Planned)** — On-device LLM for AI commands
+### AI Models
+| Component | Model | Size |
+|-----------|-------|------|
+| **Speech-to-Text** | NVIDIA Parakeet TDT 0.6B (int8) | ~470 MB |
+| **Offline LLM** | Qwen3 0.6B Q4_K_XL | ~405 MB |
+| **Cloud LLM** | Groq Llama 3.1 70B | API |
 
 ### Build
 - **Cargo** — Rust package manager
 - **Android SDK/NDK** — Native compilation
+- **ONNX Runtime** — Neural network inference
 
 ---
 
@@ -186,7 +232,7 @@ cd VoiceAI
 ./build.ps1
 
 # Install
-adb install -r VoiceAI-v1.2.0.apk
+adb install -r VoiceAI-v1.2.1.apk
 ```
 
 **Requirements:**

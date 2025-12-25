@@ -22,6 +22,9 @@ jni = "0.21"
 once_cell = "1.19"
 parking_lot = "0.12"
 crossbeam-channel = "0.5"
+# Note: llama-cpp-2 removed due to Android cross-compilation issues
+# Using enhanced rule-based processing instead
+regex = "1"
 
 # For asset extraction
 tar = "0.4"
