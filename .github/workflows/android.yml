@@ -1,0 +1,72 @@
+name: Android Build
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: 'gradle'
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: aarch64-linux-android
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Install Android NDK
+      run: |
+        sdkmanager --install "ndk;28.0.12433566"
+        echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.0.12433566" >> $GITHUB_ENV
+
+    - name: Accepted Android Licenses
+      run: yes | sdkmanager --licenses
+
+    - name: Download Model Assets
+      run: |
+        echo "Creating assets directory..."
+        mkdir -p assets/parakeet-tdt-0.6b-v3-int8
+        cd assets/parakeet-tdt-0.6b-v3-int8
+        
+        echo "Downloading encoder-model.int8.onnx..."
+        wget -q https://huggingface.co/nvidia/parakeet-tdt-0.6b/resolve/main/parakeet-tdt-0.6b-v3-int8/encoder-model.int8.onnx
+        
+        echo "Downloading nemo128.onnx..."
+        wget -q https://huggingface.co/nvidia/parakeet-tdt-0.6b/resolve/main/parakeet-tdt-0.6b-v3-int8/nemo128.onnx
+        
+        echo "Downloading vocab.txt..."
+        wget -q https://huggingface.co/nvidia/parakeet-tdt-0.6b/resolve/main/parakeet-tdt-0.6b-v3-int8/vocab.txt
+        
+        echo "Assets downloaded:"
+        ls -la
+
+    - name: Build APK
+      run: |
+        chmod +x build.sh
+        ./build.sh
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: VoiceAI-APK
+        path: android_transcribe_app_release.apk

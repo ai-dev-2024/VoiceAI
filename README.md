@@ -9,6 +9,7 @@
 Fully local voice dictation with advanced AI post-processing
 
 [![Release](https://img.shields.io/badge/Release-v1.2.1-brightgreen?style=for-the-badge)](../../releases/latest)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/ai-dev-2024/VoiceAI/android.yml?branch=main&style=for-the-badge&logo=github)](https://github.com/ai-dev-2024/VoiceAI/actions)
 [![Built with Antigravity](https://img.shields.io/badge/Built%20with-Google%20Antigravity-4285F4?style=for-the-badge&logo=google)](https://developers.google.com/project-antigravity)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 [![Android](https://img.shields.io/badge/Android-min%20API%2026-3DDC84?style=for-the-badge&logo=android)](https://developer.android.com)
