@@ -200,31 +200,67 @@ public class SettingsActivity extends Activity {
                                 new Thread(() -> {
                                         try {
                                                 java.net.URL url = new java.net.URL(
-                                                                "https://huggingface.co/unsloth/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-UD-Q4_K_XL.gguf");
+                                                                "https://huggingface.co/unsloth/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-UD-Q4_K_XL.gguf?download=true");
                                                 java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url
                                                                 .openConnection();
+                                                conn.setInstanceFollowRedirects(true);
+                                                conn.setConnectTimeout(30_000);
+                                                conn.setReadTimeout(30_000);
                                                 conn.setRequestProperty("User-Agent", "VoiceAI/1.2.1");
+
+                                                int responseCode = conn.getResponseCode();
+                                                if (responseCode < 200 || responseCode >= 300) {
+                                                        throw new java.io.IOException("Server returned HTTP " + responseCode);
+                                                }
 
                                                 java.io.File outputFile = new java.io.File(getFilesDir(),
                                                                 "Qwen3-0.6B-UD-Q4_K_XL.gguf");
-                                                java.io.InputStream in = conn.getInputStream();
-                                                java.io.FileOutputStream out = new java.io.FileOutputStream(outputFile);
+                                                java.io.File tempFile = java.io.File.createTempFile(
+                                                                "Qwen3-0.6B-", ".gguf.part", getFilesDir());
+                                                long fileSize = conn.getContentLengthLong();
 
-                                                byte[] buffer = new byte[8192];
-                                                int bytesRead;
-                                                long totalBytes = 0;
-                                                long fileSize = conn.getContentLength();
+                                                try (java.io.InputStream in = new java.io.BufferedInputStream(conn.getInputStream());
+                                                                java.io.FileOutputStream out = new java.io.FileOutputStream(tempFile)) {
+                                                        byte[] buffer = new byte[8192];
+                                                        int bytesRead;
+                                                        long totalBytes = 0;
+                                                        int lastProgress = -1;
 
-                                                while ((bytesRead = in.read(buffer)) != -1) {
-                                                        out.write(buffer, 0, bytesRead);
-                                                        totalBytes += bytesRead;
-                                                        final int progress = (int) ((totalBytes * 100) / fileSize);
-                                                        runOnUiThread(() -> downloadBtn
-                                                                        .setText("⏳ Downloading... " + progress + "%"));
+                                                        while ((bytesRead = in.read(buffer)) != -1) {
+                                                                out.write(buffer, 0, bytesRead);
+                                                                totalBytes += bytesRead;
+                                                                if (fileSize > 0) {
+                                                                        final int progress = (int) Math.min(100,
+                                                                                        (totalBytes * 100) / fileSize);
+                                                                        if (progress != lastProgress) {
+                                                                                lastProgress = progress;
+                                                                                runOnUiThread(() -> downloadBtn.setText(
+                                                                                                "⏳ Downloading... " + progress + "%"));
+                                                                        }
+                                                                }
+                                                        }
+
+                                                        if (fileSize > 0 && totalBytes != fileSize) {
+                                                                throw new java.io.IOException("Download incomplete");
+                                                        }
+                                                } catch (Exception e) {
+                                                        tempFile.delete();
+                                                        throw e;
+                                                } finally {
+                                                        conn.disconnect();
                                                 }
 
-                                                out.close();
-                                                in.close();
+                                                try {
+                                                        java.nio.file.Files.move(tempFile.toPath(), outputFile.toPath(),
+                                                                        java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                                                                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                                } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                                                        java.nio.file.Files.move(tempFile.toPath(), outputFile.toPath(),
+                                                                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                                } catch (Exception e) {
+                                                        tempFile.delete();
+                                                        throw e;
+                                                }
 
                                                 runOnUiThread(() -> {
                                                         downloadBtn.setText("✓ Model Downloaded");
