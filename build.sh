@@ -105,8 +105,21 @@ if [ ! -d "libs/onnxruntime" ]; then
     echo "ONNX Runtime extracted."
 fi
 
-# Generate Cargo Config if missing
+# Generate Cargo Config if missing or stale.
+# The repo may carry a machine-specific config (e.g. local NDK paths);
+# regenerate it when its linker does not exist on this machine.
+REGENERATE_CARGO_CONFIG=0
 if [ ! -f ".cargo/config.toml" ]; then
+    REGENERATE_CARGO_CONFIG=1
+else
+    CONFIG_LINKER=$(grep -E '^[[:space:]]*linker[[:space:]]*=' .cargo/config.toml | head -n 1 | sed -E 's/.*"([^"]+)".*/\1/')
+    if [ -z "$CONFIG_LINKER" ] || [ ! -f "$CONFIG_LINKER" ]; then
+        echo "Existing .cargo/config.toml points to a linker that is not present on this machine; regenerating."
+        REGENERATE_CARGO_CONFIG=1
+    fi
+fi
+
+if [ "$REGENERATE_CARGO_CONFIG" = "1" ]; then
     echo "Generating .cargo/config.toml..."
     mkdir -p .cargo
     
