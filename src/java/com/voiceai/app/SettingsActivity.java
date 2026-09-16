@@ -215,8 +215,8 @@ public class SettingsActivity extends Activity {
 
                                                 java.io.File outputFile = new java.io.File(getFilesDir(),
                                                                 "Qwen3-0.6B-UD-Q4_K_XL.gguf");
-                                                java.io.File tempFile = new java.io.File(getFilesDir(),
-                                                                "Qwen3-0.6B-UD-Q4_K_XL.gguf.part");
+                                                java.io.File tempFile = java.io.File.createTempFile(
+                                                                "Qwen3-0.6B-", ".gguf.part", getFilesDir());
                                                 long fileSize = conn.getContentLengthLong();
 
                                                 try (java.io.InputStream in = new java.io.BufferedInputStream(conn.getInputStream());
@@ -224,6 +224,7 @@ public class SettingsActivity extends Activity {
                                                         byte[] buffer = new byte[8192];
                                                         int bytesRead;
                                                         long totalBytes = 0;
+                                                        int lastProgress = -1;
 
                                                         while ((bytesRead = in.read(buffer)) != -1) {
                                                                 out.write(buffer, 0, bytesRead);
@@ -231,8 +232,11 @@ public class SettingsActivity extends Activity {
                                                                 if (fileSize > 0) {
                                                                         final int progress = (int) Math.min(100,
                                                                                         (totalBytes * 100) / fileSize);
-                                                                        runOnUiThread(() -> downloadBtn.setText(
-                                                                                        "⏳ Downloading... " + progress + "%"));
+                                                                        if (progress != lastProgress) {
+                                                                                lastProgress = progress;
+                                                                                runOnUiThread(() -> downloadBtn.setText(
+                                                                                                "⏳ Downloading... " + progress + "%"));
+                                                                        }
                                                                 }
                                                         }
 
@@ -246,13 +250,16 @@ public class SettingsActivity extends Activity {
                                                         conn.disconnect();
                                                 }
 
-                                                if (outputFile.exists() && !outputFile.delete()) {
+                                                try {
+                                                        java.nio.file.Files.move(tempFile.toPath(), outputFile.toPath(),
+                                                                        java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                                                                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                                } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                                                        java.nio.file.Files.move(tempFile.toPath(), outputFile.toPath(),
+                                                                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                                } catch (Exception e) {
                                                         tempFile.delete();
-                                                        throw new java.io.IOException("Could not replace existing model");
-                                                }
-                                                if (!tempFile.renameTo(outputFile)) {
-                                                        tempFile.delete();
-                                                        throw new java.io.IOException("Could not save downloaded model");
+                                                        throw e;
                                                 }
 
                                                 runOnUiThread(() -> {
