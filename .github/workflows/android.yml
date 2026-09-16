@@ -24,12 +24,14 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-        cache: 'gradle'
 
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
         targets: aarch64-linux-android
+
+    - name: Cache Cargo artifacts
+      uses: Swatinem/rust-cache@v2
 
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
