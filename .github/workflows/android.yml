@@ -35,13 +35,15 @@ jobs:
 
     - name: Accept Android SDK licenses
       run: |
+        SDKMANAGER="${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager"
         set +o pipefail
-        yes | sdkmanager --licenses > /dev/null
+        yes | "$SDKMANAGER" --licenses > /dev/null
 
     - name: Install Android NDK
       run: |
-        sdkmanager --install "ndk;28.0.12433566"
-        echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.0.12433566" >> $GITHUB_ENV
+        SDKMANAGER="${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager"
+        "$SDKMANAGER" --install "ndk;28.0.12433566"
+        echo "ANDROID_NDK_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}/ndk/28.0.12433566" >> $GITHUB_ENV
 
     - name: Download Model Assets
       run: |
