@@ -33,16 +33,15 @@ jobs:
     - name: Cache Cargo artifacts
       uses: Swatinem/rust-cache@v2
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
+    - name: Accept Android SDK licenses
+      run: |
+        set +o pipefail
+        yes | sdkmanager --licenses > /dev/null
 
     - name: Install Android NDK
       run: |
         sdkmanager --install "ndk;28.0.12433566"
         echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.0.12433566" >> $GITHUB_ENV
-
-    - name: Accepted Android Licenses
-      run: yes | sdkmanager --licenses
 
     - name: Download Model Assets
       run: |
