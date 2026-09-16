@@ -659,4 +659,4 @@ public class SettingsActivity extends Activity {
                 SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
                 return prefs.getBoolean(PREF_AUTO_SILENCE, true);
         }
-        }
+}
