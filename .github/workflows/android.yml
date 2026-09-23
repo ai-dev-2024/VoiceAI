@@ -30,8 +30,12 @@ jobs:
       with:
         targets: aarch64-linux-android
 
-    - name: Cache Cargo artifacts
+    - name: Cache Cargo registry
       uses: Swatinem/rust-cache@v2
+      with:
+        # A restored target/ dir left whisper-rs-sys with a stale CMake tree
+        # and broke the build; cache only the registry and build target/ fresh.
+        cache-targets: false
 
     - name: Accept Android SDK licenses
       run: |
@@ -47,24 +51,19 @@ jobs:
 
     - name: Download Model Assets
       run: |
-        echo "Creating assets directory..."
-        mkdir -p assets/parakeet-tdt-0.6b-v3-int8
-        cd assets/parakeet-tdt-0.6b-v3-int8
-
-        download() {
-          echo "Downloading $1..."
-          if ! wget -q "https://huggingface.co/nvidia/parakeet-tdt-0.6b/resolve/main/parakeet-tdt-0.6b-v3-int8/$1"; then
-            rm -f "$1"
-            echo "::warning::Could not download $1: nvidia/parakeet-tdt-0.6b currently requires Hugging Face authentication. Building without bundled model files; the app downloads them on device at first run."
+        # Parakeet TDT 0.6B v3 (int8 ONNX export), public and ungated on Hugging Face.
+        # If a download fails, the APK is still built but without the bundled speech model.
+        MODEL_DIR=assets/parakeet-tdt-0.6b-v3-int8
+        BASE_URL=https://huggingface.co/istupakov/parakeet-tdt-0.6b-v3-onnx/resolve/main
+        mkdir -p "$MODEL_DIR"
+        for f in encoder-model.int8.onnx decoder_joint-model.int8.onnx nemo128.onnx vocab.txt; do
+          echo "Downloading $f..."
+          if ! curl -fsSL --retry 3 -o "$MODEL_DIR/$f" "$BASE_URL/$f"; then
+            rm -f "$MODEL_DIR/$f"
+            echo "::warning::Could not download $f. The APK will not include the bundled speech model."
           fi
-        }
-
-        download encoder-model.int8.onnx
-        download nemo128.onnx
-        download vocab.txt
-
-        echo "Assets directory:"
-        ls -la
+        done
+        ls -la "$MODEL_DIR"
 
     - name: Build APK
       run: |
