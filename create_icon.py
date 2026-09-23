@@ -1,5 +1,6 @@
 from PIL import Image, ImageDraw
 import math
+import os
 
 # Create a 192x192 icon with gradient background and waveform bars
 size = 192
@@ -45,5 +46,5 @@ for i, height_ratio in enumerate(bar_heights):
     )
 
 # Save the icon
-img.save(r'c:\Users\Muhib\Desktop\Projects\VoiceAI\res\drawable\icon.png', 'PNG')
+img.save(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'res', 'drawable', 'icon.png'), 'PNG')
 print("Icon created successfully!")
