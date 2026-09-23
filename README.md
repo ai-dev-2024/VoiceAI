@@ -10,7 +10,6 @@ Fully local voice dictation with advanced AI post-processing
 
 [![Release](https://img.shields.io/badge/Release-v1.2.1-brightgreen?style=for-the-badge)](../../releases/latest)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/ai-dev-2024/VoiceAI/android.yml?branch=main&style=for-the-badge&logo=github)](https://github.com/ai-dev-2024/VoiceAI/actions)
-[![Built with Antigravity](https://img.shields.io/badge/Built%20with-Google%20Antigravity-4285F4?style=for-the-badge&logo=google)](https://developers.google.com/project-antigravity)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 [![Android](https://img.shields.io/badge/Android-min%20API%2026-3DDC84?style=for-the-badge&logo=android)](https://developer.android.com)
 
@@ -225,9 +224,15 @@ VoiceAIPipeline (Chain of Responsibility)
 git clone https://github.com/ai-dev-2024/VoiceAI.git
 cd VoiceAI
 
-# Download model files (required)
-# From: https://huggingface.co/nvidia/parakeet-tdt-0.6b
-# Place in: assets/parakeet-tdt-0.6b-v3-int8/
+# Download the speech model (int8 ONNX export of NVIDIA Parakeet TDT 0.6B v3)
+mkdir -p assets/parakeet-tdt-0.6b-v3-int8
+for f in encoder-model.int8.onnx decoder_joint-model.int8.onnx nemo128.onnx vocab.txt; do
+  curl -fL -o assets/parakeet-tdt-0.6b-v3-int8/$f \
+    https://huggingface.co/istupakov/parakeet-tdt-0.6b-v3-onnx/resolve/main/$f
+done
+
+# Build (Linux/macOS)
+./build.sh
 
 # Build (Windows PowerShell)
 ./build.ps1
@@ -240,7 +245,7 @@ adb install -r VoiceAI-v1.2.1.apk
 - Android SDK (API 36)
 - Android NDK 28
 - Rust toolchain with `aarch64-linux-android` target
-- Parakeet TDT 0.6B model files (~600MB)
+- Parakeet TDT 0.6B v3 int8 model files (~670 MB), from [istupakov/parakeet-tdt-0.6b-v3-onnx](https://huggingface.co/istupakov/parakeet-tdt-0.6b-v3-onnx)
 
 ---
 
